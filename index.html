@@ -98,7 +98,7 @@ main{padding:24px 28px;max-width:1700px;margin:0 auto}
 .table-wrapper{background:var(--white);border-radius:var(--radius);box-shadow:var(--shadow-md);overflow:auto}
 table{width:100%;border-collapse:collapse;font-size:13px}
 thead{background:var(--green-dark);position:sticky;top:0;z-index:10}
-thead th{color:#fff;padding:12px 13px;text-align:left;font-weight:600;font-size:12px;letter-spacing:.3px;white-space:nowrap;cursor:pointer;user-select:none;transition:background .15s}
+thead th{color:#fff;padding:8px 13px;text-align:left;font-weight:600;font-size:12px;letter-spacing:.3px;white-space:nowrap;cursor:pointer;user-select:none;transition:background .15s}
 thead th:hover{background:rgba(255,255,255,.1)}
 .sort-icon{opacity:.4;margin-left:3px;font-size:10px}
 tbody tr{border-bottom:1px solid var(--gray-100);transition:filter .1s}
@@ -107,21 +107,21 @@ tbody tr:hover{filter:brightness(.97)}
 tbody tr.row-approved{background:#fff}
 tbody tr.row-rejected{background:#fff5f5;border-left:3px solid #f87171}
 tbody tr.row-included{background:#fffdf0;border-left:3px solid #facc15}
-tbody td{padding:10px 13px;color:var(--gray-700);vertical-align:middle}
-td.col-name{font-weight:600;color:var(--gray-900)}
-td.col-proposta{font-family:'DM Mono',monospace;font-size:12px;color:var(--gray-500)}
+tbody td{padding:3px 10px;color:var(--gray-700);vertical-align:middle;line-height:1.25}
+td.col-name{font-weight:600;color:var(--gray-900);white-space:nowrap}
+td.col-proposta{font-family:'DM Mono',monospace;font-size:12px;color:var(--gray-500);white-space:nowrap}
 td.col-data{font-size:12px;white-space:nowrap;color:var(--gray-500)}
-td.col-dn{font-family:'DM Mono',monospace;font-size:12px}
-td.col-loja{color:var(--green-dark);font-weight:500;max-width:220px}
-td.col-gcm,td.col-coord{font-size:12px;color:#475569}
-.badge{display:inline-flex;align-items:center;gap:4px;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:700;white-space:nowrap}
+td.col-dn{font-family:'DM Mono',monospace;font-size:12px;white-space:nowrap}
+td.col-loja{color:var(--green-dark);font-weight:500;max-width:220px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:default}
+td.col-gcm,td.col-coord{font-size:12px;color:#475569;white-space:nowrap;max-width:160px;overflow:hidden;text-overflow:ellipsis}
+.badge{display:inline-flex;align-items:center;gap:4px;padding:1px 8px;border-radius:20px;font-size:11px;font-weight:700;white-space:nowrap;line-height:1.5}
 .badge-approved{background:#dcfce7;color:#166534}
 .badge-rejected{background:#fee2e2;color:#991b1b}
 .badge-included{background:#fef9c3;color:#713f12}
-.obs-input{width:100%;border:1px solid var(--gray-200);border-radius:6px;padding:5px 9px;font-size:12px;font-family:'DM Sans',sans-serif;color:var(--gray-700);background:var(--gray-50);transition:all .2s;resize:none;min-width:160px}
+.obs-input{width:100%;border:1px solid var(--gray-200);border-radius:6px;padding:3px 8px;font-size:12px;font-family:'DM Sans',sans-serif;color:var(--gray-700);background:var(--gray-50);transition:all .2s;resize:none;min-width:160px}
 .obs-input:focus{outline:none;border-color:var(--green-main);background:#fff;box-shadow:0 0 0 3px rgba(34,164,93,.1)}
 .obs-input::placeholder{color:#b0bec5}
-.obs-select{width:100%;border:1px solid var(--gray-200);border-radius:6px;padding:5px 9px;font-size:12px;font-family:'DM Sans',sans-serif;color:var(--gray-700);background:var(--gray-50);cursor:pointer;min-width:170px;}
+.obs-select{width:100%;border:1px solid var(--gray-200);border-radius:6px;padding:3px 8px;font-size:12px;font-family:'DM Sans',sans-serif;color:var(--gray-700);background:var(--gray-50);cursor:pointer;min-width:170px;height:28px;}
 .obs-select:focus{outline:none;border-color:var(--green-main);}
 tr.row-obs-lost td{background:#fee2e2!important;color:#7f1d1d!important;}
 tr.row-obs-lost td span{color:#7f1d1d!important;}
@@ -133,7 +133,7 @@ tr.row-obs-rival td{background:#b91c1c!important;color:#fff!important;}
 tr.row-obs-rival td span{color:#fff!important;}
 tr.row-obs-rival .obs-select{background:#b91c1c!important;border-color:#ef4444!important;color:#fff!important;}
 tr.row-obs-rival .badge{background:transparent!important;color:#fff!important;border-color:rgba(255,255,255,.5)!important;}
-.btn-pgto{background:none;border:2px solid var(--gray-200);border-radius:8px;padding:5px 9px;cursor:pointer;font-size:15px;transition:all .2s;display:flex;align-items:center;justify-content:center;width:36px;height:32px}
+.btn-pgto{background:none;border:2px solid var(--gray-200);border-radius:8px;padding:2px 6px;cursor:pointer;font-size:13px;transition:all .2s;display:flex;align-items:center;justify-content:center;width:30px;height:24px}
 .btn-pgto:hover{border-color:var(--green-main);background:var(--green-light)}
 .btn-pgto.paid{border-color:#1d4ed8;background:#1d4ed8;color:#fff;}
 tr.row-paid td{background:#1e40af!important;color:#fff!important;}
@@ -1067,7 +1067,7 @@ const App = (() => {
       const finalRc=r._pgto?'row-paid':(obsClass||rc);
       const OBS_OPTS=['','Perdemos por taxa','Quebra de crédito','Cliente desistiu','Pago no concorrente','Aguard. documento','Negociando'];
       const obsSelect=`<select class="obs-select" data-idx="${idx}" onchange="App.updateObs(this)"><option value="">Selecione...</option>${OBS_OPTS.slice(1).map(o=>`<option value="${o}"${r._obs===o?' selected':''}>${o}</option>`).join('')}</select>`;
-      return`<tr class="${finalRc}" id="tr-${idx}"><td class="col-name">${_e(r.VENDEDOR)||'—'}</td><td class="col-proposta">${_e(r.PROPOSTA)||'—'}</td><td class="col-data">${_fmt(r.DATA_INCLUSAO)}</td><td>${badge}</td><td class="col-dn">${_e(r.DN)||'—'}</td><td class="col-loja">${_e(r.LOJA)||(r.DN?`<span style="color:#b0bec5;font-size:11px">DN ${r.DN}</span>`:'—')}</td><td class="col-gcm">${_e(r.GCM)||'—'}</td><td class="col-coord">${_e(r.COORDENADOR)||'—'}</td><td style="min-width:170px">${obsSelect}</td><td><button class="btn-pgto${r._pgto?' paid':''}" data-idx="${idx}" onclick="App.togglePgto(this)">${r._pgto?'💰':'💵'}</button></td></tr>`;
+      return`<tr class="${finalRc}" id="tr-${idx}"><td class="col-name">${_e(r.VENDEDOR)||'—'}</td><td class="col-proposta">${_e(r.PROPOSTA)||'—'}</td><td class="col-data">${_fmt(r.DATA_INCLUSAO)}</td><td>${badge}</td><td class="col-dn">${_e(r.DN)||'—'}</td><td class="col-loja" title="${_e(r.LOJA)||''}">${_e(r.LOJA)||(r.DN?`<span style="color:#b0bec5;font-size:11px">DN ${r.DN}</span>`:'—')}</td><td class="col-gcm" title="${_e(r.GCM)||''}">${_e(r.GCM)||'—'}</td><td class="col-coord" title="${_e(r.COORDENADOR)||''}">${_e(r.COORDENADOR)||'—'}</td><td style="min-width:170px">${obsSelect}</td><td><button class="btn-pgto${r._pgto?' paid':''}" data-idx="${idx}" onclick="App.togglePgto(this)">${r._pgto?'💰':'💵'}</button></td></tr>`;
     }).join('');
   }
 
