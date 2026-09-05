@@ -50,7 +50,7 @@ header{background:var(--green-dark);padding:10px 28px;display:flex;align-items:c
 .header-title-row{display:flex;align-items:baseline;gap:9px;flex-wrap:wrap}
 header h1{color:#fff;font-size:17px;font-weight:600;letter-spacing:-.3px}
 header #header-date{font-size:12px;color:rgba(255,255,255,.55)}
-.header-uploads{display:none;align-items:center;gap:8px;flex-wrap:wrap}
+.header-uploads{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .header-upload-group{display:flex;align-items:center;gap:3px}
 .header-upload-btn{background:var(--gray-200);color:#1f2937;border:none;border-radius:7px;padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;white-space:nowrap;transition:background .15s}
 .header-upload-btn:hover{background:var(--gray-300)}
@@ -243,7 +243,7 @@ tr.row-paid td span{color:#fff!important;}
       <span id="header-date"></span>
     </div>
   </div>
-  <div class="header-uploads admin-only" id="header-uploads" style="display:none;">
+  <div class="header-uploads" id="header-uploads">
     <input type="file" id="file-lojas" accept=".xlsx,.xls,.csv" onchange="App.handleUploadLojas(event)" style="display:none">
     <input type="file" id="file-propostas" accept=".xlsx,.xls,.csv" onchange="App.handleUploadPropostas(event)" style="display:none">
     <div class="header-upload-group">
@@ -667,15 +667,11 @@ const Auth = (() => {
     document.getElementById('user-role-display').textContent=roleLabels[_user.role]||_user.role;
     document.getElementById('header-date').textContent=
       new Date().toLocaleDateString('pt-BR',{weekday:'short',day:'2-digit',month:'short',year:'numeric'});
-    // Upload de lojas só para executivo
+    // Dashboard e Reset de Senha só para executivo (upload agora é liberado pra todos os perfis)
     const isGestor=['executivo'].includes(_user.role);
     if(isGestor){
       document.querySelectorAll('.admin-only').forEach(el=>{
-        if(el.id==='header-uploads'){
-          el.style.display='flex';
-        } else {
-          el.style.display='block';
-        }
+        el.style.display='block';
       });
     }
     App.init(_user);
@@ -905,7 +901,6 @@ const App = (() => {
   async function handleUploadLojas(event){
     const file=event.target.files[0]; if(!file)return;
     const el=document.getElementById('status-lojas');
-    document.getElementById('card-lojas').classList.add('active');
     el.textContent='⏳ Processando...';
     try{
       const rows=await _readFile(file); lojas={};
@@ -925,7 +920,6 @@ const App = (() => {
       await _salvarLojasSupabase();
       if(propostas.length>0){propostas=propostas.map(_enrichRow);localStorage.setItem('propostas_data',JSON.stringify(propostas));_refreshSelects();renderTable();}
     }catch(err){el.textContent='❌ Erro ao ler arquivo';showToast('Erro: '+err.message,'error');}
-    document.getElementById('card-lojas').classList.remove('active');
   }
 
   async function handleUploadPropostas(event){
