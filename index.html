@@ -44,20 +44,28 @@ body{font-family:'DM Sans',sans-serif;background:#f0f4f1;color:var(--gray-900);m
 .senha-rules{font-size:11px;color:var(--gray-500);margin-top:4px}
 
 /* ── HEADER ── */
-header{background:var(--green-dark);padding:14px 28px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 2px 8px rgba(0,0,0,.25)}
+header{background:var(--green-dark);padding:10px 28px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 2px 8px rgba(0,0,0,.25);gap:16px}
 .header-left{display:flex;align-items:center;gap:14px}
-.logo{width:40px;height:40px;background:rgba(255,255,255,.15);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px}
-header h1{color:#fff;font-size:18px;font-weight:600;letter-spacing:-.3px}
-header #header-date{font-size:12px;color:rgba(255,255,255,.55);display:block}
-.header-right{display:flex;align-items:center;gap:16px}
+.logo{width:36px;height:36px;background:rgba(255,255,255,.15);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.header-title-row{display:flex;align-items:baseline;gap:9px;flex-wrap:wrap}
+header h1{color:#fff;font-size:17px;font-weight:600;letter-spacing:-.3px}
+header #header-date{font-size:12px;color:rgba(255,255,255,.55)}
+.header-uploads{display:none;align-items:center;gap:8px;flex-wrap:wrap}
+.header-upload-group{display:flex;align-items:center;gap:3px}
+.header-upload-btn{background:var(--gray-200);color:#1f2937;border:none;border-radius:7px;padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;white-space:nowrap;transition:background .15s}
+.header-upload-btn:hover{background:var(--gray-300)}
+.header-upload-mini{background:var(--gray-200);color:#1f2937;border:none;border-radius:7px;padding:6px 8px;font-size:12px;cursor:pointer;transition:background .15s}
+.header-upload-mini:hover{background:var(--gray-300)}
+.header-upload-status{font-size:10px;color:rgba(255,255,255,.7);white-space:nowrap}
+.header-right{display:flex;align-items:center;gap:16px;flex-shrink:0}
 .user-pill{background:rgba(255,255,255,.15);border-radius:20px;padding:5px 14px;font-size:13px;color:#fff;display:flex;align-items:center;gap:8px}
 .user-role{font-size:10px;background:rgba(255,255,255,.2);border-radius:10px;padding:1px 7px;text-transform:uppercase;letter-spacing:.5px}
 .btn-logout{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:rgba(255,255,255,.8);border-radius:8px;padding:5px 12px;font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .2s}
 .btn-logout:hover{background:rgba(255,255,255,.2);color:#fff}
 
 /* ── MAIN ── */
-main{padding:24px 28px;max-width:1700px;margin:0 auto}
-.upload-panel{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px;}
+main{padding:14px 28px 24px;max-width:1700px;margin:0 auto}
+.upload-panel{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:0;}
 .upload-bar{display:flex;align-items:center;gap:12px;background:#fff;border:1.5px solid var(--gray-200);border-radius:10px;padding:10px 16px;flex-wrap:wrap;margin-bottom:14px;}
 .upload-bar-group{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
 .upload-bar-label{font-size:13px;font-weight:700;color:var(--gray-700);}
@@ -76,7 +84,8 @@ main{padding:24px 28px;max-width:1700px;margin:0 auto}
 .upload-status{margin-top:8px;font-size:12px;font-weight:600;color:var(--green-dark)}
 .admin-only{display:none}
 
-.filters-bar{background:var(--white);border-radius:var(--radius);padding:12px 18px;display:flex;align-items:center;gap:12px;margin-bottom:16px;box-shadow:var(--shadow-sm);flex-wrap:wrap}
+.filters-bar{background:var(--white);border-radius:var(--radius);padding:10px 18px;margin-bottom:16px;box-shadow:var(--shadow-sm);display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.filters-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
 .filter-label{font-size:13px;font-weight:600;color:var(--gray-700);white-space:nowrap}
 .filter-btn{border:2px solid var(--gray-200);background:var(--white);border-radius:8px;padding:5px 14px;font-size:13px;font-weight:500;cursor:pointer;transition:all .2s;font-family:'DM Sans',sans-serif;display:flex;align-items:center;gap:5px}
 .filter-btn.all.active{background:var(--green-btn);color:#fff;border-color:var(--green-btn)}
@@ -85,15 +94,35 @@ main{padding:24px 28px;max-width:1700px;margin:0 auto}
 .filter-btn.included.active{background:#fef9c3;border-color:#facc15;color:#713f12}
 .filter-btn.filial.active{background:#1a3a5c;border-color:#1a3a5c;color:#fff}
 .filter-btn:not(.active):hover{border-color:var(--gray-300);background:var(--gray-50)}
-.filter-divider{width:1px;height:26px;background:var(--gray-200)}
+.filter-divider{width:1px;height:30px;background:var(--gray-200)}
 .filter-select{border:2px solid var(--gray-200);background:var(--white);border-radius:8px;padding:5px 12px;font-size:13px;font-family:'DM Sans',sans-serif;color:var(--gray-700);cursor:pointer;min-width:180px}
 .filter-select:focus{outline:none;border-color:var(--green-main)}
-.stats-pills{margin-left:auto;display:flex;gap:6px;flex-wrap:wrap}
-.pill{padding:3px 12px;border-radius:20px;font-size:12px;font-weight:600}
-.pill-total{background:var(--gray-100);color:var(--gray-700)}
-.pill-ok{background:#dcfce7;color:#166534}
-.pill-no{background:#fee2e2;color:#991b1b}
-.pill-sem{background:#fef3c7;color:#92400e}
+.status-dropdown{position:relative}
+.status-dropdown-btn{border:2px solid var(--gray-200);background:var(--white);border-radius:8px;padding:5px 12px;font-size:13px;font-family:'DM Sans',sans-serif;color:var(--gray-700);cursor:pointer;min-width:190px;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.status-dropdown-btn:hover{border-color:var(--gray-300)}
+.status-dropdown.open .status-dropdown-btn{border-color:var(--green-main)}
+.status-dropdown-panel{display:none;position:absolute;top:calc(100% + 6px);left:0;background:#fff;border:1px solid var(--gray-200);border-radius:10px;box-shadow:var(--shadow-md);min-width:260px;z-index:30;padding:6px;}
+.status-dropdown.open .status-dropdown-panel{display:block}
+.status-dropdown-item{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 10px;border-radius:7px;font-size:13px;color:var(--gray-700);cursor:pointer;font-weight:500}
+.status-dropdown-item:hover{background:var(--gray-50)}
+.status-dropdown-item.active{background:var(--green-light);color:var(--green-dark);font-weight:700}
+.status-dropdown-check{opacity:0;color:var(--green-dark);font-weight:700}
+.status-dropdown-item.active .status-dropdown-check{opacity:1}
+.status-dropdown-divider{height:1px;background:var(--gray-100);margin:6px 2px}
+.status-dropdown-checkbox{cursor:pointer}
+.status-dropdown-checkbox input{cursor:pointer;width:16px;height:16px;accent-color:var(--green-main)}
+.status-dropdown-footer{margin-top:4px;font-size:11px;background:#fef3c7;color:#92400e;border:1px solid #fde68a;border-radius:7px;padding:6px 10px;font-weight:600;line-height:1.4}
+
+.stats-inline{display:flex;align-items:center;gap:13px}
+.stat-mini{display:flex;flex-direction:column;align-items:center;line-height:1.1}
+.stat-mini .stat-value{font-size:15px;font-weight:800;color:var(--gray-900)}
+.stat-mini .stat-label{font-size:9px;font-weight:700;color:var(--gray-500);text-transform:uppercase;letter-spacing:.3px}
+.stat-ok .stat-value{color:#166534}
+.stat-no .stat-value{color:#991b1b}
+.stat-pago .stat-value{color:#1e40af}
+.stat-sem .stat-value{color:#92400e}
+.btn-relatorio{margin-left:auto;background:#15803d;color:#fff;border:none;border-radius:10px;padding:8px 16px;font-size:13px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;display:flex;align-items:center;gap:6px;transition:background .2s}
+.btn-relatorio:hover{background:#166534}
 
 .table-wrapper{background:var(--white);border-radius:var(--radius);box-shadow:var(--shadow-md);overflow:auto}
 table{width:100%;border-collapse:collapse;font-size:13px}
@@ -209,9 +238,24 @@ tr.row-paid td span{color:#fff!important;}
 <header>
   <div class="header-left">
     <div class="logo">📊</div>
-    <div>
+    <div class="header-title-row">
       <h1>Acompanhamento de Propostas</h1>
       <span id="header-date"></span>
+    </div>
+  </div>
+  <div class="header-uploads admin-only" id="header-uploads" style="display:none;">
+    <input type="file" id="file-lojas" accept=".xlsx,.xls,.csv" onchange="App.handleUploadLojas(event)" style="display:none">
+    <input type="file" id="file-propostas" accept=".xlsx,.xls,.csv" onchange="App.handleUploadPropostas(event)" style="display:none">
+    <div class="header-upload-group">
+      <button class="header-upload-btn" onclick="document.getElementById('file-lojas').click()" title="Enviar planilha de lojas">🏪 Lojas</button>
+      <button class="header-upload-mini" onclick="App.baixarModeloLojas()" title="Baixar modelo de lojas">📥</button>
+      <span class="header-upload-status" id="status-lojas"></span>
+    </div>
+    <div class="header-upload-group">
+      <button class="header-upload-btn" onclick="document.getElementById('file-propostas').click()" title="Enviar planilha de propostas">📄 Propostas</button>
+      <button class="header-upload-mini" onclick="App.baixarModeloPropostas()" title="Baixar modelo de propostas">📥</button>
+      <span class="header-upload-status" id="status-propostas"></span>
+      <span id="ultima-atualizacao" class="header-upload-status"></span>
     </div>
   </div>
   <div class="header-right">
@@ -353,29 +397,6 @@ tr.row-paid td span{color:#fff!important;}
 <main>
   <div class="upload-panel" id="upload-panel">
 
-    <!-- Barra compacta de upload — só admin -->
-    <div class="admin-only upload-bar" id="upload-bar" style="display:none;">
-      <input type="file" id="file-lojas" accept=".xlsx,.xls,.csv" onchange="App.handleUploadLojas(event)" style="display:none">
-      <input type="file" id="file-propostas" accept=".xlsx,.xls,.csv" onchange="App.handleUploadPropostas(event)" style="display:none">
-
-      <div class="upload-bar-group">
-        <span class="upload-bar-label">🏪 Lojas</span>
-        <button class="upload-bar-btn" onclick="document.getElementById('file-lojas').click()">📂 Upload</button>
-        <button class="upload-bar-btn" onclick="App.baixarModeloLojas()">📥 Modelo</button>
-        <span class="upload-bar-status" id="status-lojas"></span>
-      </div>
-
-      <div class="upload-bar-divider"></div>
-
-      <div class="upload-bar-group">
-        <span class="upload-bar-label">📄 Propostas</span>
-        <button class="upload-bar-btn" onclick="document.getElementById('file-propostas').click()">📂 Upload</button>
-        <button class="upload-bar-btn" onclick="App.baixarModeloPropostas()">📥 Modelo</button>
-        <span class="upload-bar-status" id="status-propostas"></span>
-        <span id="ultima-atualizacao" style="font-size:11px;color:var(--gray-500);"></span>
-      </div>
-    </div>
-
     <!-- LINHA 2: Ações — ocultas -->
     <div class="upload-card upload-action" onclick="App.recarregarBanco()" style="display:none!important;">
       <span class="upload-icon">🔄</span>
@@ -413,26 +434,40 @@ tr.row-paid td span{color:#fff!important;}
   </div>
 
   <div class="filters-bar">
-    <span class="filter-label">Status:</span>
-    <button class="filter-btn all active" onclick="App.setFilter('all')">Todas</button>
-    <button class="filter-btn approved" onclick="App.setFilter('Aprovada')">✅ Aprovadas</button>
-    <button class="filter-btn rejected" onclick="App.setFilter('Recusada')">❌ Recusadas</button>
-    <button class="filter-btn included" onclick="App.setFilter('Incluida')">🕐 Incluídas</button>
-    <span id="filtro-global-badge" style="display:none;font-size:11px;background:#fef3c7;color:#92400e;border:1px solid #fde68a;border-radius:20px;padding:3px 10px;font-weight:600;">🌐 filtro global ativo</span>
-    <button class="filter-btn filial" onclick="App.toggleFilial(this)">🏢 Só minha filial</button>
-    <div class="filter-divider"></div>
-    <span class="filter-label">GCM:</span>
-    <select class="filter-select" id="gcm-select" onchange="App.renderTable()"><option value="">Todos</option></select>
-    <span class="filter-label">Coordenador:</span>
-    <select class="filter-select" id="coord-select" onchange="App.renderTable()"><option value="">Todos</option></select>
-    <div class="stats-pills">
-      <span class="pill pill-total" id="pill-total">0 total</span>
-      <span class="pill pill-ok"    id="pill-ok">0 aprov.</span>
-      <span class="pill pill-no"    id="pill-no">0 recus.</span>
-      <span class="pill" id="pill-pago" style="background:#1e40af;color:#fff;">0 pagas</span>
-      <span class="pill pill-sem"   id="pill-sem">0 sem vínculo</span>
-      <button onclick="App.gerarRelatorioExcel()" style="background:#15803d;color:#fff;border:none;border-radius:20px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;display:flex;align-items:center;gap:5px;">📊 Relatório Excel</button>
+    <div class="stats-inline">
+      <div class="stat-mini stat-total"><span class="stat-value" id="pill-total">0</span><span class="stat-label">total</span></div>
+      <div class="stat-mini stat-ok"><span class="stat-value" id="pill-ok">0</span><span class="stat-label">aprov.</span></div>
+      <div class="stat-mini stat-no"><span class="stat-value" id="pill-no">0</span><span class="stat-label">recusa</span></div>
+      <div class="stat-mini stat-pago"><span class="stat-value" id="pill-pago">0</span><span class="stat-label">pagas</span></div>
+      <div class="stat-mini stat-sem" style="display:none"><span class="stat-value" id="pill-sem">0</span><span class="stat-label">s/ vínc.</span></div>
     </div>
+    <div class="filter-divider"></div>
+    <div class="filters-row">
+      <span class="filter-label">Status:</span>
+      <div class="status-dropdown" id="status-dropdown">
+        <button type="button" class="status-dropdown-btn" onclick="App.toggleStatusMenu()" id="status-dropdown-btn">
+          <span id="status-dropdown-label">Todas</span>
+          <span class="sort-icon">▾</span>
+        </button>
+        <div class="status-dropdown-panel" id="status-dropdown-panel">
+          <div class="status-dropdown-item active" data-value="all" onclick="App.setFilter('all')"><span>Todas</span><span class="status-dropdown-check">✓</span></div>
+          <div class="status-dropdown-item" data-value="Aprovada" onclick="App.setFilter('Aprovada')"><span>✅ Aprovadas</span><span class="status-dropdown-check">✓</span></div>
+          <div class="status-dropdown-item" data-value="Recusada" onclick="App.setFilter('Recusada')"><span>❌ Recusadas</span><span class="status-dropdown-check">✓</span></div>
+          <div class="status-dropdown-item" data-value="Incluida" onclick="App.setFilter('Incluida')"><span>🕐 Incluídas</span><span class="status-dropdown-check">✓</span></div>
+          <div class="status-dropdown-divider"></div>
+          <label class="status-dropdown-item status-dropdown-checkbox">
+            <span>🏢 Só minha filial</span>
+            <input type="checkbox" id="filial-checkbox" onchange="App.toggleFilial(this)">
+          </label>
+          <div class="status-dropdown-footer" id="filtro-global-badge" style="display:none;">🌐 filtro global ativo — esse status vale pra todo mundo</div>
+        </div>
+      </div>
+      <span class="filter-label">GCM:</span>
+      <select class="filter-select" id="gcm-select" onchange="App.renderTable()"><option value="">Todos</option></select>
+      <span class="filter-label">Coordenador:</span>
+      <select class="filter-select" id="coord-select" onchange="App.renderTable()"><option value="">Todos</option></select>
+    </div>
+    <button onclick="App.gerarRelatorioExcel()" class="btn-relatorio">📊 Excel</button>
   </div>
 
   <div class="table-wrapper">
@@ -636,7 +671,7 @@ const Auth = (() => {
     const isGestor=['executivo'].includes(_user.role);
     if(isGestor){
       document.querySelectorAll('.admin-only').forEach(el=>{
-        if(el.classList.contains('upload-bar')){
+        if(el.id==='header-uploads'){
           el.style.display='flex';
         } else {
           el.style.display='block';
@@ -1052,11 +1087,11 @@ const App = (() => {
     if(somenteFilial)rows=rows.filter(r=>r.GCM&&r.GCM.trim()!=='');
     rows.sort((a,b)=>{let va=a[sortField]||'',vb=b[sortField]||'';if(sortField==='DATA_INCLUSAO'){va=new Date(va);vb=new Date(vb);}else{va=String(va).toLowerCase();vb=String(vb).toLowerCase();}return va<vb?-sortDir:va>vb?sortDir:0;});
     const semVinculo=propostas.filter(r=>!r.GCM||r.GCM.trim()==='').length;
-    document.getElementById('pill-total').textContent=rows.length+' total';
-    document.getElementById('pill-ok').textContent=rows.filter(r=>r.STATUS==='Aprovada').length+' aprov.';
-    document.getElementById('pill-no').textContent=rows.filter(r=>r.STATUS==='Recusada').length+' recus.';
-    document.getElementById('pill-pago').textContent=rows.filter(r=>r._pgto).length+' pagas';
-    document.getElementById('pill-sem').textContent=semVinculo+' sem vínculo';
+    document.getElementById('pill-total').textContent=rows.length;
+    document.getElementById('pill-ok').textContent=rows.filter(r=>r.STATUS==='Aprovada').length;
+    document.getElementById('pill-no').textContent=rows.filter(r=>r.STATUS==='Recusada').length;
+    document.getElementById('pill-pago').textContent=rows.filter(r=>r._pgto).length;
+    document.getElementById('pill-sem').textContent=semVinculo;
     const tbody=document.getElementById('table-body');
     if(!rows.length){tbody.innerHTML=`<tr><td colspan="10"><div class="empty-state"><div class="empty-icon">🔍</div><h3>Nenhum resultado</h3><p>Tente alterar os filtros</p></div></td></tr>`;return;}
     tbody.innerHTML=rows.map(r=>{
@@ -1074,14 +1109,32 @@ const App = (() => {
   function _fmt(d){if(!d)return'';const dt=new Date(d);if(isNaN(dt))return String(d).replace('T',' ').substring(0,16);return dt.toLocaleDateString('pt-BR')+' '+dt.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});}
   function _e(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 
+  const STATUS_LABELS={all:'Todas',Aprovada:'✅ Aprovadas',Recusada:'❌ Recusadas',Incluida:'🕐 Incluídas'};
+
+  function toggleStatusMenu(){
+    document.getElementById('status-dropdown').classList.toggle('open');
+  }
+
+  function _syncStatusMenu(f){
+    const label=document.getElementById('status-dropdown-label');
+    if(label) label.textContent=STATUS_LABELS[f]||'Todas';
+    document.querySelectorAll('.status-dropdown-item[data-value]').forEach(el=>{
+      el.classList.toggle('active',el.dataset.value===f);
+    });
+    const badge=document.getElementById('filtro-global-badge');
+    if(badge) badge.style.display=f==='all'?'none':'block';
+  }
+
+  // Fecha o menu ao clicar fora dele
+  document.addEventListener('click',function(e){
+    const dd=document.getElementById('status-dropdown');
+    if(dd && dd.classList.contains('open') && !dd.contains(e.target)) dd.classList.remove('open');
+  });
+
   function setFilter(f){
     currentFilter=f;
-    document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
-    const m={all:'.all',Aprovada:'.approved',Recusada:'.rejected',Incluida:'.included'};
-    document.querySelector('.filter-btn'+m[f])?.classList.add('active');
-    // Mostra badge só se filtro não for "Todas"
-    const badge=document.getElementById('filtro-global-badge');
-    if(badge) badge.style.display=f==='all'?'none':'inline-block';
+    _syncStatusMenu(f);
+    document.getElementById('status-dropdown')?.classList.remove('open');
     renderTable();
     _salvarFiltroGlobal(f);
   }
@@ -1102,16 +1155,12 @@ const App = (() => {
       if(res&&res[0]&&res[0].valor){
         const f=res[0].valor;
         currentFilter=f;
-        document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
-        const m={all:'.all',Aprovada:'.approved',Recusada:'.rejected',Incluida:'.included'};
-        document.querySelector('.filter-btn'+m[f])?.classList.add('active');
-        const badge=document.getElementById('filtro-global-badge');
-        if(badge) badge.style.display=f==='all'?'none':'inline-block';
+        _syncStatusMenu(f);
       }
     }catch(e){console.warn('Erro ao carregar filtro:',e);}
   }
   function sortBy(f){sortDir=sortField===f?-sortDir:1;sortField=f;renderTable();}
-  function toggleFilial(btn){somenteFilial=!somenteFilial;btn.classList.toggle('active',somenteFilial);renderTable();}
+  function toggleFilial(cb){somenteFilial=cb.checked;renderTable();}
   async function tirarSnapshot(){
     if(!propostas.length){showToast('Nenhuma proposta para salvar','error');return;}
     const el=document.getElementById('status-snapshot');
@@ -1603,7 +1652,7 @@ const App = (() => {
 
   function _atualizarPillPago(){
     const pill=document.getElementById('pill-pago');
-    if(pill) pill.textContent=propostas.filter(r=>r._pgto).length+' pagas';
+    if(pill) pill.textContent=propostas.filter(r=>r._pgto).length;
   }
 
   async function _salvarLinha(r){
@@ -1771,7 +1820,7 @@ const App = (() => {
     showToast('📥 Modelo de propostas baixado!','success');
   }
 
-  return{init,handleUploadLojas,handleUploadPropostas,renderTable,setFilter,sortBy,toggleFilial,recarregarBanco,tirarSnapshot,carregarSnapshot,voltarHoje,abrirLimparSnapshots,fecharLimparSnapshots,executarLimparSnap,abrirDashboard,fecharDashboard,updateObs,togglePgto,saveToSupabase,exportCSV,_switchLimparTab,_previewLimparPropostas,baixarModeloLojas,baixarModeloPropostas,gerarRelatorioExcel};
+  return{init,handleUploadLojas,handleUploadPropostas,renderTable,setFilter,sortBy,toggleFilial,toggleStatusMenu,recarregarBanco,tirarSnapshot,carregarSnapshot,voltarHoje,abrirLimparSnapshots,fecharLimparSnapshots,executarLimparSnap,abrirDashboard,fecharDashboard,updateObs,togglePgto,saveToSupabase,exportCSV,_switchLimparTab,_previewLimparPropostas,baixarModeloLojas,baixarModeloPropostas,gerarRelatorioExcel};
 
 })();
 
