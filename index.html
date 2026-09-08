@@ -714,14 +714,6 @@ const App = (() => {
     const el=document.getElementById('status-propostas');
     if(el)el.textContent='⏳ Carregando do banco...';
     try{
-      // Primeiro busca a data da última atualização no banco
-      const ultData=await SB.get('config?chave=eq.ultima_atualizacao&select=valor');
-      let dataFiltro='';
-      if(Array.isArray(ultData)&&ultData.length>0){
-        // Pega apenas a data (YYYY-MM-DD) do timestamp
-        dataFiltro=ultData[0].valor.slice(0,10);
-      }
-
       let query='propostas?select=*&order=data_inclusao.desc&limit=50000';
       if(_user.role==='gcm'){
         query=`propostas?gcm=eq.${encodeURIComponent(_user.nome)}&select=*&order=data_inclusao.desc&limit=50000`;
@@ -735,14 +727,7 @@ const App = (() => {
       const data=await SB.get(query);
       if(!Array.isArray(data)) throw new Error(data.message||data.hint||JSON.stringify(data));
       if(data.length>0){
-        let registros=data;
-        // Filtra pela data da última atualização se disponível
-        if(dataFiltro){
-          const filtrados=data.filter(r=>(r.updated_at||'').slice(0,10)===dataFiltro);
-          // Só aplica filtro se retornar resultados
-          if(filtrados.length>0) registros=filtrados;
-        }
-        propostas=registros.map(r=>({
+        propostas=data.map(r=>({
           ID_PROPOSTA:  r.id_proposta||'', VENDEDOR:r.vendedor||'',
           PROPOSTA:     r.proposta||'',    DATA_INCLUSAO:r.data_inclusao||'',
           DN:           r.dn||'',          LOJA:r.loja||'',
@@ -849,57 +834,53 @@ const App = (() => {
       }
       const rows=await _readFile(file);
 
-      // 1. Busca obs/pgto existentes no banco
+      // 1. Busca TODAS as propostas já existentes no banco (não só obs/pgto) —
+      // isso é o que permite manter o histórico anterior em vez de substituí-lo.
       el.textContent='⏳ Consultando banco...';
-      const existing={};
+      const existingFull={};
       try{
-        const dbRows=await SB.get('propostas?select=id_proposta,proposta,observacao,pgto');
+        const dbRows=await SB.get('propostas?select=id_proposta,proposta,vendedor,data_inclusao,dn,loja,gcm,coordenador,regional,executivo,status,observacao,pgto');
         if(Array.isArray(dbRows)){
           dbRows.forEach(p=>{
             const k=p.id_proposta||p.proposta;
-            if(k) existing[k]={_obs:p.observacao||'',_pgto:p.pgto||false};
+            if(!k)return;
+            existingFull[k]={
+              ID_PROPOSTA:p.id_proposta||'',PROPOSTA:p.proposta||'',VENDEDOR:p.vendedor||'',
+              DATA_INCLUSAO:p.data_inclusao||'',DN:p.dn||'',LOJA:p.loja||'',GCM:p.gcm||'',
+              COORDENADOR:p.coordenador||'',REGIONAL:p.regional||'',EXECUTIVO:p.executivo||'',
+              STATUS:p.status||'',_obs:p.observacao||'',_pgto:p.pgto||false
+            };
           });
         }
       }catch(e){console.warn('Merge warn:',e);}
 
-      // 2. Monta mapa do CSV — preserva obs/pgto das existentes
+      // 2. Monta mapa do CSV — preserva obs/pgto das que já existiam
       el.textContent='⏳ Processando planilha...';
       const csvMapa={};
       rows.forEach(r=>{
         const row=_normalizeRow(r);
         const k=row.ID_PROPOSTA||row.PROPOSTA;
         if(k){
-          if(existing[k]){row._obs=existing[k]._obs;row._pgto=existing[k]._pgto;}
+          if(existingFull[k]){row._obs=existingFull[k]._obs;row._pgto=existingFull[k]._pgto;}
           csvMapa[k]=_enrichRow(row);
         }
       });
 
-      // 3. Identifica IDs removidos do CSV (estavam no banco, não vieram no CSV)
-      const idsNoCSV=new Set(Object.keys(csvMapa));
-      const idsParaDeletar=Object.keys(existing).filter(k=>!idsNoCSV.has(k));
+      // 3. Mescla: mantém tudo que já estava no banco e soma/atualiza com o que veio no CSV.
+      // Nada é apagado aqui — a limpeza de propostas antigas (>15 dias) ou sem vínculo
+      // é feita separadamente pela limpeza automática (_limpezaAutomatica), baseada em
+      // data e vínculo, nunca com base em "não veio nesse upload".
+      const mesclado={...existingFull,...csvMapa};
 
-      // 4. Deleta do banco os que saíram do CSV
-      if(idsParaDeletar.length>0){
-        el.textContent=`⏳ Removendo ${idsParaDeletar.length} proposta(s) antigas...`;
-        for(let i=0;i<idsParaDeletar.length;i+=50){
-          const lote=idsParaDeletar.slice(i,i+50);
-          const filtro=lote.map(k=>`id_proposta=eq.${encodeURIComponent(k)}`).join('&');
-          await fetch(`${SB_URL}/rest/v1/propostas?or=(${lote.map(k=>`id_proposta.eq.${k}`).join(',')})`,{
-            method:'DELETE',
-            headers:{'apikey':SB_KEY,'Authorization':`Bearer ${SB_KEY}`,'Prefer':'return=minimal'}
-          });
-        }
-      }
-
-      // 5. Propostas finais = apenas as do CSV, ordenadas da mais nova para a mais antiga
-      const novas=Object.keys(csvMapa).filter(k=>!existing[k]).length;
-      const atualizadas=Object.keys(csvMapa).filter(k=>!!existing[k]).length;
-      propostas=Object.values(csvMapa).sort((a,b)=>{
+      // 4. Propostas finais = existentes + novas/atualizadas, ordenadas da mais nova para a mais antiga
+      const novas=Object.keys(csvMapa).filter(k=>!existingFull[k]).length;
+      const atualizadas=Object.keys(csvMapa).filter(k=>!!existingFull[k]).length;
+      propostas=Object.values(mesclado).sort((a,b)=>{
         const da=new Date(a.DATA_INCLUSAO||0), db=new Date(b.DATA_INCLUSAO||0);
         return db-da; // mais nova primeiro
       });
 
-      // 6. Registra última atualização
+      // 5. Registra última atualização
       const agora=new Date().toISOString();
       const agoraFmt=new Date().toLocaleDateString('pt-BR')+' às '+new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
       localStorage.setItem('ultima_atualizacao',agoraFmt);
@@ -907,10 +888,12 @@ const App = (() => {
       if(uaEl)uaEl.textContent='🕐 Última atualização: '+agoraFmt;
       SB.post('config?on_conflict=chave',[{chave:'ultima_atualizacao',valor:agora,usuario:_user.nome}],'resolution=merge-duplicates,return=minimal').catch(()=>{});
 
-      el.textContent=`✅ ${propostas.length} total (${novas} novas · ${idsParaDeletar.length} removidas)`;
-      showToast(`✅ ${novas} novas · ${atualizadas} atualizadas · ${idsParaDeletar.length} removidas`,'success');
-      await saveToSupabase(true);
-      // Depois de salvar tudo no banco, volta a mostrar só o que esse usuário pode ver
+      el.textContent=`✅ ${propostas.length} total (${novas} novas · ${atualizadas} atualizadas)`;
+      showToast(`✅ ${novas} novas · ${atualizadas} atualizadas · nada foi apagado`,'success');
+      // Salva no banco só o que veio nesse upload (novas/atualizadas) — o que já
+      // estava salvo permanece intacto, sem precisar reenviar tudo de novo.
+      await saveToSupabase(true,Object.values(csvMapa));
+      // Depois de salvar, volta a mostrar só o que esse usuário pode ver
       propostas=_scopePropostas(propostas);
       _refreshSelects(); renderTable();
     }catch(err){el.textContent='❌ Erro: '+err.message;showToast('Erro: '+err.message,'error');console.error(err);}
@@ -1627,10 +1610,11 @@ const App = (() => {
     }catch(e){showToast('Erro ao salvar','error');}
   }
 
-  async function saveToSupabase(silencioso=false){
+  async function saveToSupabase(silencioso=false,lista=null){
     if(!silencioso)showToast('Salvando...','info');
     try{
-      const payload=propostas.map(r=>({
+      const origem=lista||propostas;
+      const payload=origem.map(r=>({
         id_proposta:r.ID_PROPOSTA||null,
         proposta:r.PROPOSTA||null,
         vendedor:r.VENDEDOR||null,
