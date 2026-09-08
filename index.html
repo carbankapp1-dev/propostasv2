@@ -159,6 +159,10 @@ td.col-coord{display:none}
 .obs-input::placeholder{color:#b0bec5}
 .obs-select{width:100%;border:1px solid var(--gray-200);border-radius:6px;padding:3px 8px;font-size:12px;font-family:'DM Sans',sans-serif;color:var(--gray-700);background:var(--gray-50);cursor:pointer;min-width:170px;height:28px;}
 .obs-select:focus{outline:none;border-color:var(--green-main);}
+.obs-wrap{display:flex;flex-direction:column;gap:4px;min-width:170px}
+.obs-nota-input{width:100%;border:1px solid var(--gray-200);border-radius:6px;padding:3px 8px;font-size:11px;font-family:'DM Sans',sans-serif;color:var(--gray-700);background:#fff}
+.obs-nota-input:focus{outline:none;border-color:var(--green-main);box-shadow:0 0 0 3px rgba(34,164,93,.1)}
+.obs-nota-input::placeholder{color:#b0bec5}
 tr.row-obs-lost td{background:#fee2e2!important;color:#7f1d1d!important;}
 tr.row-obs-lost td span{color:#7f1d1d!important;}
 tr.row-obs-lost .obs-select{background:#fee2e2!important;border-color:#fca5a5!important;}
@@ -169,6 +173,8 @@ tr.row-obs-rival td{background:#b91c1c!important;color:#fff!important;}
 tr.row-obs-rival td span{color:#fff!important;}
 tr.row-obs-rival .obs-select{background:#b91c1c!important;border-color:#ef4444!important;color:#fff!important;}
 tr.row-obs-rival .badge{background:transparent!important;color:#fff!important;border-color:rgba(255,255,255,.5)!important;}
+tr.row-obs-other td{background:var(--gray-100)!important;color:var(--gray-700)!important;}
+tr.row-obs-other .obs-select{background:var(--gray-100)!important;border-color:var(--gray-300)!important;}
 .btn-pgto{background:none;border:2px solid var(--gray-200);border-radius:8px;padding:2px 6px;cursor:pointer;font-size:13px;transition:all .2s;display:flex;align-items:center;justify-content:center;width:30px;height:24px}
 .btn-pgto:hover{border-color:var(--green-main);background:var(--green-light)}
 .btn-pgto.paid{border-color:#3b82f6;background:#3b82f6;color:#fff;}
@@ -1020,8 +1026,10 @@ const App = (() => {
       const badge=r._pgto?`<span class="badge" style="background:#3b82f6;color:#fff;border-color:#3b82f6;">💰 Pago</span>`:`<span class="badge badge-${meta.cls}">${meta.icon} ${meta.label}</span>`;
       const obsClass=_obsRowClass(r._obs);
       const finalRc=r._pgto?'row-paid':(obsClass||rc);
-      const OBS_OPTS=['','Perdemos por taxa','Quebra de crédito','Cliente desistiu','Pago no concorrente','Aguard. documento','Negociando'];
-      const obsSelect=`<select class="obs-select" data-idx="${idx}" onchange="App.updateObs(this)"><option value="">Selecione...</option>${OBS_OPTS.slice(1).map(o=>`<option value="${o}"${r._obs===o?' selected':''}>${o}</option>`).join('')}</select>`;
+      const OBS_OPTS=['','Perdemos por taxa','Quebra de crédito','Cliente desistiu','Pago no concorrente','Aguard. documento','Negociando','Outros'];
+      const{categoria:obsCategoria,nota:obsNota}=_obsSplit(r._obs);
+      const mostraNota=_OBS_COM_NOTA.includes(obsCategoria);
+      const obsSelect=`<div class="obs-wrap"><select class="obs-select" data-idx="${idx}" onchange="App.updateObs(this)"><option value="">Selecione...</option>${OBS_OPTS.slice(1).map(o=>`<option value="${_e(o)}"${obsCategoria===o?' selected':''}>${_e(o)}</option>`).join('')}</select><input type="text" class="obs-nota-input" data-idx="${idx}" placeholder="Detalhe aqui..." value="${_e(obsNota)}" oninput="App.updateObsNota(this)" style="${mostraNota?'':'display:none'}"></div>`;
       return`<tr class="${finalRc}" id="tr-${idx}"><td class="col-name">${_e(r.VENDEDOR)||'—'}</td><td class="col-proposta">${_e(r.PROPOSTA)||'—'}</td><td class="col-data">${_fmt(r.DATA_INCLUSAO)}</td><td>${badge}</td><td class="col-dn">${_e(r.DN)||'—'}</td><td class="col-loja" title="${_e(r.LOJA)||''}">${_e(r.LOJA)||(r.DN?`<span style="color:#b0bec5;font-size:11px">DN ${r.DN}</span>`:'—')}</td><td class="col-gcm" title="${_e(r.GCM)||''}">${_e(r.GCM)||'—'}</td><td class="col-coord" title="${_e(r.COORDENADOR)||''}">${_e(r.COORDENADOR)||'—'}</td><td style="min-width:170px">${obsSelect}</td><td><button class="btn-pgto${r._pgto?' paid':''}" data-idx="${idx}" onclick="App.togglePgto(this)">${r._pgto?'💰':'💵'}</button></td></tr>`;
     }).join('');
   }
@@ -1555,17 +1563,42 @@ const App = (() => {
   const _OBS_LOST=['Perdemos por taxa','Quebra de crédito','Cliente desistiu'];
   const _OBS_RIVAL=['Pago no concorrente'];
   const _OBS_WARN=['Aguard. documento','Negociando'];
+  const _OBS_COM_NOTA=['Negociando','Outros','Quebra de crédito','Pago no concorrente']; // essas categorias abrem uma caixinha de texto pra detalhar
+  // Uma observação pode ser só a categoria ("Negociando") ou categoria + nota livre ("Negociando: fecha semana que vem")
+  function _obsSplit(raw){
+    if(!raw) return{categoria:'',nota:''};
+    for(const opt of _OBS_COM_NOTA){
+      if(raw===opt) return{categoria:opt,nota:''};
+      if(raw.startsWith(opt+': ')) return{categoria:opt,nota:raw.slice(opt.length+2)};
+    }
+    return{categoria:raw,nota:''};
+  }
+  function _obsJoin(categoria,nota){
+    if(_OBS_COM_NOTA.includes(categoria)&&nota&&nota.trim()) return`${categoria}: ${nota.trim()}`;
+    return categoria;
+  }
   function _obsRowClass(obs){
-    if(!obs)return'';
-    if(_OBS_RIVAL.includes(obs))return'row-obs-rival';
-    if(_OBS_LOST.includes(obs))return'row-obs-lost';
-    if(_OBS_WARN.includes(obs))return'row-obs-warn';
+    const{categoria}=_obsSplit(obs);
+    if(!categoria)return'';
+    if(_OBS_RIVAL.includes(categoria))return'row-obs-rival';
+    if(_OBS_LOST.includes(categoria))return'row-obs-lost';
+    if(_OBS_WARN.includes(categoria))return'row-obs-warn';
+    if(categoria==='Outros')return'row-obs-other';
     return'';
   }
 
   function updateObs(el){
     const idx=parseInt(el.dataset.idx);if(isNaN(idx)||!propostas[idx])return;
-    propostas[idx]._obs=el.value;
+    const categoria=el.value;
+    const wrap=el.closest('.obs-wrap');
+    const notaInput=wrap?wrap.querySelector('.obs-nota-input'):null;
+    const mostraNota=_OBS_COM_NOTA.includes(categoria);
+    if(notaInput){
+      notaInput.style.display=mostraNota?'block':'none';
+      if(mostraNota){notaInput.focus();} else {notaInput.value='';}
+    }
+    const nota=(mostraNota&&notaInput)?notaInput.value:'';
+    propostas[idx]._obs=_obsJoin(categoria,nota);
     // Atualiza classe da linha conforme seleção
     const tr=document.getElementById('tr-'+idx);
     if(tr){
@@ -1575,6 +1608,16 @@ const App = (() => {
       else if(obsClass){tr.className=obsClass;}
       else{tr.className='row-'+_statusMeta(r.STATUS).cls;}
     }
+    try{localStorage.setItem('propostas_data',JSON.stringify(propostas));}catch(e){}
+    clearTimeout(_debounceTimer);
+    _debounceTimer=setTimeout(()=>_salvarLinha(propostas[idx]),1500);
+  }
+  function updateObsNota(input){
+    const idx=parseInt(input.dataset.idx);if(isNaN(idx)||!propostas[idx])return;
+    const wrap=input.closest('.obs-wrap');
+    const select=wrap?wrap.querySelector('.obs-select'):null;
+    const categoria=select?select.value:_obsSplit(propostas[idx]._obs).categoria;
+    propostas[idx]._obs=_obsJoin(categoria,input.value);
     try{localStorage.setItem('propostas_data',JSON.stringify(propostas));}catch(e){}
     clearTimeout(_debounceTimer);
     _debounceTimer=setTimeout(()=>_salvarLinha(propostas[idx]),1500);
@@ -1777,7 +1820,7 @@ const App = (() => {
     showToast('📥 Modelo de propostas baixado!','success');
   }
 
-  return{init,handleUploadLojas,handleUploadPropostas,renderTable,setFilter,sortBy,toggleFilial,toggleStatusMenu,toggleUploadMenu,recarregarBanco,tirarSnapshot,carregarSnapshot,voltarHoje,abrirLimparSnapshots,fecharLimparSnapshots,executarLimparSnap,abrirDashboard,fecharDashboard,updateObs,togglePgto,saveToSupabase,exportCSV,_switchLimparTab,_previewLimparPropostas,baixarModeloLojas,baixarModeloPropostas,gerarRelatorioExcel};
+  return{init,handleUploadLojas,handleUploadPropostas,renderTable,setFilter,sortBy,toggleFilial,toggleStatusMenu,toggleUploadMenu,recarregarBanco,tirarSnapshot,carregarSnapshot,voltarHoje,abrirLimparSnapshots,fecharLimparSnapshots,executarLimparSnap,abrirDashboard,fecharDashboard,updateObs,updateObsNota,togglePgto,saveToSupabase,exportCSV,_switchLimparTab,_previewLimparPropostas,baixarModeloLojas,baixarModeloPropostas,gerarRelatorioExcel};
 
 })();
 
