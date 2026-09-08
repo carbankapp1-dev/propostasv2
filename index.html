@@ -39,8 +39,7 @@ body{font-family:'DM Sans',sans-serif;background:#f0f4f1;color:var(--gray-900);m
 .login-hint{font-size:12px;color:var(--gray-500);text-align:center;margin-top:16px}
 .login-hint b{color:var(--green-dark)}
 
-/* primeiro acesso */
-.primeiro-acesso-badge{background:#fef9c3;border:1px solid #fde68a;border-radius:8px;padding:10px 14px;font-size:13px;color:#92400e;margin-bottom:16px;display:none}
+/* senha */
 .senha-rules{font-size:11px;color:var(--gray-500);margin-top:4px}
 
 /* ── HEADER ── */
@@ -204,15 +203,12 @@ tr.row-paid td span:not(.badge){color:#1e3a5f!important;}
   <div class="login-box">
     <div class="login-logo">📊</div>
     <div class="login-title">Acompanhamento de Propostas</div>
-    <div class="login-sub" id="login-sub">Entre com seu nome e senha para acessar</div>
+    <div class="login-sub" id="login-sub">Entre com seu nome e a senha de acesso</div>
 
     <div class="login-error" id="login-error"></div>
-    <div class="primeiro-acesso-badge" id="primeiro-acesso-badge">
-      🔐 <b>Primeiro acesso!</b> Crie uma nova senha para continuar.
-    </div>
 
     <div class="login-field">
-      <label>Seu nome (GCM ou Coordenador)</label>
+      <label>Seu nome completo</label>
       <input type="text" id="inp-nome" placeholder="Nome Completo" autocomplete="username"
         oninput="this.value=this.value.toUpperCase()" onkeydown="if(event.key==='Enter')Auth.login()">
     </div>
@@ -222,22 +218,8 @@ tr.row-paid td span:not(.badge){color:#1e3a5f!important;}
         onkeydown="if(event.key==='Enter')Auth.login()">
     </div>
 
-    <!-- campos visíveis só no primeiro acesso -->
-    <div id="campos-nova-senha" style="display:none">
-      <div class="login-field">
-        <label>Nova senha</label>
-        <input type="password" id="inp-nova" placeholder="Mínimo 6 caracteres">
-        <div class="senha-rules">Mínimo 6 caracteres</div>
-      </div>
-      <div class="login-field">
-        <label>Confirmar nova senha</label>
-        <input type="password" id="inp-confirma" placeholder="Repita a nova senha"
-          onkeydown="if(event.key==='Enter')Auth.login()">
-      </div>
-    </div>
-
     <button class="login-btn" id="btn-login" onclick="Auth.login()">Entrar</button>
-    <div class="login-hint" id="login-hint">Primeiro acesso? Use seu <b>nome completo</b> como senha inicial.</div>
+    <div class="login-hint" id="login-hint">Use a <b>senha padrão</b> informada pela sua liderança.</div>
   </div>
 </div>
 
@@ -285,30 +267,11 @@ tr.row-paid td span:not(.badge){color:#1e3a5f!important;}
       <span class="user-role" id="user-role-display"></span>
     </div>
     <button class="btn-logout admin-only" onclick="App.abrirDashboard()" style="background:rgba(134,239,172,.15);border-color:rgba(134,239,172,.4);color:#86efac;">📊 Dashboard</button>
-    <button class="btn-logout admin-only" onclick="Auth.abrirResetSenha()" style="background:rgba(255,193,7,.15);border-color:rgba(255,193,7,.4);color:#fcd34d;">🔑 Resetar Senha</button>
     <button class="btn-logout" onclick="Auth.logout()">Sair</button>
   </div>
 </header>
 
 <!-- ═══ MODAL RESET SENHA ═══ -->
-<div id="modal-reset" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:300;align-items:center;justify-content:center;">
-  <div style="background:#fff;border-radius:16px;padding:32px;width:100%;max-width:400px;margin:20px;box-shadow:0 24px 64px rgba(0,0,0,.3);">
-    <div style="font-size:20px;font-weight:700;color:var(--gray-900);margin-bottom:6px;">🔑 Resetar Senha</div>
-    <div style="font-size:13px;color:var(--gray-500);margin-bottom:20px;">A senha será redefinida para o nome do usuário (primeiro acesso)</div>
-    <div style="margin-bottom:16px;">
-      <label style="display:block;font-size:12px;font-weight:600;color:var(--gray-700);margin-bottom:6px;text-transform:uppercase;letter-spacing:.3px;">Usuário para resetar</label>
-      <select id="reset-select" style="width:100%;border:2px solid var(--gray-200);border-radius:10px;padding:10px 14px;font-size:14px;font-family:'DM Sans',sans-serif;color:var(--gray-900);">
-        <option value="">Selecione o usuário...</option>
-      </select>
-    </div>
-    <div id="reset-msg" style="display:none;border-radius:8px;padding:10px 14px;font-size:13px;margin-bottom:14px;"></div>
-    <div style="display:flex;gap:10px;">
-      <button onclick="Auth.confirmarReset()" style="flex:1;background:var(--green-btn);color:#fff;border:none;border-radius:10px;padding:11px;font-size:14px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;">Confirmar Reset</button>
-      <button onclick="Auth.fecharResetSenha()" style="flex:1;background:var(--gray-100);color:var(--gray-700);border:none;border-radius:10px;padding:11px;font-size:14px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;">Cancelar</button>
-    </div>
-  </div>
-</div>
-
 <!-- ═══ MODAL DASHBOARD ═══ -->
 <div id="modal-dash" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:300;align-items:flex-start;justify-content:center;overflow-y:auto;padding:20px;">
   <div style="background:#fff;border-radius:20px;width:100%;max-width:860px;margin:auto;box-shadow:0 24px 64px rgba(0,0,0,.3);overflow:hidden;">
@@ -571,13 +534,8 @@ const SB = {
 //  AUTH
 // ════════════════════════════════════════════════
 const Auth = (() => {
-  let _user = null; // { nome, role, coordenador }
-  let _primeiroAcesso = false;
-
-  async function _sha256(str) {
-    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
-    return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
-  }
+  let _user = null; // { nome, role }
+  const SENHA_UNICA = 'asdf1234';
 
   async function login() {
     const nome   = document.getElementById('inp-nome').value.trim().toUpperCase();
@@ -591,68 +549,14 @@ const Auth = (() => {
     btn.disabled=true; btn.textContent='Verificando...';
 
     try {
-      // Busca usuário no banco
-      const rows = await SB.get(`usuarios?nome=eq.${encodeURIComponent(nome)}&select=*`);
-
-      // Usuário não existe — verifica se o nome é um GCM ou Coordenador válido
-      if (!rows || rows.length === 0) {
-        const valido = await _verificarNomeValido(nome);
-        if (!valido) { _showErr('Nome não encontrado. Use seu nome completo como aparece no sistema.'); btn.disabled=false;btn.textContent='Entrar'; return; }
-        // Primeiro acesso — senha deve ser igual ao nome
-        if (senha.toUpperCase() !== nome) {
-          _showErr('Senha incorreta. No primeiro acesso, a senha é o seu nome completo.'); btn.disabled=false;btn.textContent='Entrar'; return;
-        }
-        // Mostra campos de nova senha
-        if (!_primeiroAcesso) {
-          _primeiroAcesso = true;
-          document.getElementById('campos-nova-senha').style.display='block';
-          document.getElementById('primeiro-acesso-badge').style.display='block';
-          document.getElementById('login-hint').style.display='none';
-          document.getElementById('label-senha').textContent='Senha atual (seu nome)';
-          btn.disabled=false; btn.textContent='Confirmar nova senha';
-          showToast('Defina uma nova senha para continuar','info'); return;
-        }
-        // Valida nova senha
-        const nova     = document.getElementById('inp-nova').value;
-        const confirma = document.getElementById('inp-confirma').value;
-        if (nova.length < 6) { _showErr('A nova senha deve ter pelo menos 6 caracteres.'); btn.disabled=false;btn.textContent='Confirmar nova senha'; return; }
-        if (nova !== confirma) { _showErr('As senhas não coincidem.'); btn.disabled=false;btn.textContent='Confirmar nova senha'; return; }
-        // Descobre o papel (GCM ou Coordenador)
-        const role = await _descobrirRole(nome);
-        const hash = await _sha256(nova);
-        await SB.post('usuarios', {nome, senha_hash:hash, role, primeiro_acesso:false}, 'return=minimal');
-        _user = {nome, role};
-        _entrar();
-      } else {
-        // Usuário existe
-        const u = rows[0];
-        if (u.primeiro_acesso) {
-          // Ainda não trocou a senha
-          if (senha.toUpperCase() !== nome) { _showErr('No primeiro acesso, use seu nome completo como senha.'); btn.disabled=false;btn.textContent='Entrar'; return; }
-          if (!_primeiroAcesso) {
-            _primeiroAcesso=true;
-            document.getElementById('campos-nova-senha').style.display='block';
-            document.getElementById('primeiro-acesso-badge').style.display='block';
-            document.getElementById('login-hint').style.display='none';
-            document.getElementById('label-senha').textContent='Senha atual (seu nome)';
-            btn.disabled=false; btn.textContent='Confirmar nova senha'; return;
-          }
-          const nova=document.getElementById('inp-nova').value;
-          const confirma=document.getElementById('inp-confirma').value;
-          if (nova.length<6){_showErr('Mínimo 6 caracteres.');btn.disabled=false;btn.textContent='Confirmar nova senha';return;}
-          if (nova!==confirma){_showErr('As senhas não coincidem.');btn.disabled=false;btn.textContent='Confirmar nova senha';return;}
-          const hash=await _sha256(nova);
-          await SB.patch(`usuarios?nome=eq.${encodeURIComponent(nome)}`,{senha_hash:hash,primeiro_acesso:false});
-          _user={nome,role:u.role};
-          _entrar();
-        } else {
-          // Login normal
-          const hash=await _sha256(senha);
-          if (hash!==u.senha_hash){_showErr('Senha incorreta.');btn.disabled=false;btn.textContent='Entrar';return;}
-          _user={nome,role:u.role};
-          _entrar();
-        }
+      if (senha !== SENHA_UNICA) {
+        _showErr('Senha incorreta.'); btn.disabled=false; btn.textContent='Entrar'; return;
       }
+      const valido = await _verificarNomeValido(nome);
+      if (!valido) { _showErr('Nome não encontrado. Use seu nome completo como aparece no sistema.'); btn.disabled=false; btn.textContent='Entrar'; return; }
+      const role = await _descobrirRole(nome);
+      _user = {nome, role};
+      _entrar();
     } catch(e) {
       _showErr('Erro de conexão: '+e.message);
       btn.disabled=false; btn.textContent='Entrar';
@@ -660,23 +564,23 @@ const Auth = (() => {
   }
 
   async function _verificarNomeValido(nome) {
-    const r1 = await SB.get(`propostas?gcm=eq.${encodeURIComponent(nome)}&select=gcm&limit=1`);
+    const r1 = await SB.get(`propostas?gcm=ilike.${encodeURIComponent(nome)}&select=gcm&limit=1`);
     if (r1&&r1.length>0) return true;
-    const r2 = await SB.get(`propostas?coordenador=eq.${encodeURIComponent(nome)}&select=coordenador&limit=1`);
+    const r2 = await SB.get(`propostas?coordenador=ilike.${encodeURIComponent(nome)}&select=coordenador&limit=1`);
     if (r2&&r2.length>0) return true;
-    const r3 = await SB.get(`propostas?regional=eq.${encodeURIComponent(nome)}&select=regional&limit=1`);
+    const r3 = await SB.get(`propostas?regional=ilike.${encodeURIComponent(nome)}&select=regional&limit=1`);
     if (r3&&r3.length>0) return true;
-    const r4 = await SB.get(`propostas?executivo=eq.${encodeURIComponent(nome)}&select=executivo&limit=1`);
+    const r4 = await SB.get(`propostas?executivo=ilike.${encodeURIComponent(nome)}&select=executivo&limit=1`);
     if (r4&&r4.length>0) return true;
     return false;
   }
 
   async function _descobrirRole(nome) {
-    const r4 = await SB.get(`propostas?executivo=eq.${encodeURIComponent(nome)}&select=executivo&limit=1`);
+    const r4 = await SB.get(`propostas?executivo=ilike.${encodeURIComponent(nome)}&select=executivo&limit=1`);
     if (r4&&r4.length>0) return 'executivo';
-    const r3 = await SB.get(`propostas?regional=eq.${encodeURIComponent(nome)}&select=regional&limit=1`);
+    const r3 = await SB.get(`propostas?regional=ilike.${encodeURIComponent(nome)}&select=regional&limit=1`);
     if (r3&&r3.length>0) return 'regional';
-    const r2 = await SB.get(`propostas?coordenador=eq.${encodeURIComponent(nome)}&select=coordenador&limit=1`);
+    const r2 = await SB.get(`propostas?coordenador=ilike.${encodeURIComponent(nome)}&select=coordenador&limit=1`);
     if (r2&&r2.length>0) return 'coordenador';
     return 'gcm';
   }
@@ -690,7 +594,7 @@ const Auth = (() => {
     document.getElementById('user-role-display').textContent=roleLabels[_user.role]||_user.role;
     document.getElementById('header-date').textContent=
       new Date().toLocaleDateString('pt-BR',{weekday:'short',day:'2-digit',month:'short',year:'numeric'});
-    // Dashboard e Reset de Senha só para executivo (upload agora é liberado pra todos os perfis)
+    // Dashboard só para executivo (upload agora é liberado pra todos os perfis)
     const isGestor=['executivo'].includes(_user.role);
     if(isGestor){
       document.querySelectorAll('.admin-only').forEach(el=>{
@@ -703,70 +607,6 @@ const Auth = (() => {
   function logout() {
     sessionStorage.removeItem('usuario');
     location.reload();
-  }
-
-  async function abrirResetSenha() {
-    const modal=document.getElementById('modal-reset');
-    const sel  =document.getElementById('reset-select');
-    const msg  =document.getElementById('reset-msg');
-    msg.style.display='none';
-    sel.innerHTML='<option value="">Carregando...</option>';
-    modal.style.display='flex';
-    try{
-      // Define quais campos buscar conforme o role
-      let nomes=[];
-      if(_user.role==='coordenador'){
-        const rows=await SB.get(`propostas?coordenador=eq.${encodeURIComponent(_user.nome)}&select=gcm&limit=50000`);
-        nomes=[...new Set((Array.isArray(rows)?rows:[]).map(r=>r.gcm).filter(Boolean))].sort();
-      } else if(_user.role==='regional'){
-        const rows=await SB.get(`propostas?regional=eq.${encodeURIComponent(_user.nome)}&select=gcm,coordenador&limit=50000`);
-        const arr=Array.isArray(rows)?rows:[];
-        nomes=[...new Set([...arr.map(r=>r.gcm),...arr.map(r=>r.coordenador)].filter(Boolean))].sort();
-      } else if(_user.role==='executivo'){
-        const rows=await SB.get(`propostas?select=gcm,coordenador,regional&limit=50000`);
-        const arr=Array.isArray(rows)?rows:[];
-        nomes=[...new Set([...arr.map(r=>r.gcm),...arr.map(r=>r.coordenador),...arr.map(r=>r.regional)].filter(Boolean))].sort();
-      }
-      if(!nomes.length){sel.innerHTML='<option value="">Nenhum usuário encontrado</option>';return;}
-      const usuarios=await SB.get('usuarios?select=nome,primeiro_acesso&order=nome');
-      const mapa={};
-      if(Array.isArray(usuarios))usuarios.forEach(u=>mapa[u.nome]=u);
-      sel.innerHTML='<option value="">Selecione o usuário...</option>'+nomes.map(n=>{
-        const u=mapa[n];
-        const st=!u?'— nunca acessou':u.primeiro_acesso?'— aguardando 1º acesso':'— ativo';
-        return`<option value="${n}">${n} ${st}</option>`;
-      }).join('');
-    }catch(e){sel.innerHTML='<option value="">Erro ao carregar</option>';}
-  }
-
-  async function confirmarReset() {
-    const sel  = document.getElementById('reset-select');
-    const msg  = document.getElementById('reset-msg');
-    const nome = sel.value;
-    if (!nome) { _showResetMsg('Selecione um usuário.', 'error'); return; }
-    try {
-      // Reseta: limpa senha_hash e marca primeiro_acesso = true
-      // O usuário terá que entrar com nome como senha e criar nova senha
-      await SB.patch(`usuarios?nome=eq.${encodeURIComponent(nome)}`, {
-        senha_hash: null,
-        primeiro_acesso: true,
-      });
-      _showResetMsg(`✅ Senha de ${nome.split(' ')[0]} resetada! No próximo acesso ele usará o nome como senha.`, 'success');
-    } catch(e) {
-      _showResetMsg('Erro ao resetar: ' + e.message, 'error');
-    }
-  }
-
-  function fecharResetSenha() {
-    document.getElementById('modal-reset').style.display = 'none';
-  }
-
-  function _showResetMsg(msg, type) {
-    const el = document.getElementById('reset-msg');
-    el.textContent = msg;
-    el.style.display = 'block';
-    el.style.background = type === 'success' ? '#dcfce7' : '#fee2e2';
-    el.style.color      = type === 'success' ? '#166534' : '#991b1b';
   }
 
   function getUser() { return _user; }
@@ -783,7 +623,7 @@ const Auth = (() => {
     return false;
   }
 
-  return {login, logout, getUser, checkSession, abrirResetSenha, confirmarReset, fecharResetSenha};
+  return {login, logout, getUser, checkSession};
 })();
 
 // ════════════════════════════════════════════════
