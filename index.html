@@ -785,6 +785,16 @@ const App = (() => {
     }catch(err){el.textContent='❌ Erro ao ler arquivo';showToast('Erro: '+err.message,'error');}
   }
 
+  // Aplica a mesma regra de visibilidade por perfil usada no carregamento inicial,
+  // pra manter a tela consistente logo após um upload (sem precisar dar F5).
+  function _scopePropostas(list){
+    if(!_user) return list;
+    if(_user.role==='gcm') return list.filter(r=>r.GCM===_user.nome);
+    if(_user.role==='coordenador') return list.filter(r=>r.COORDENADOR===_user.nome);
+    if(_user.role==='regional') return list.filter(r=>r.REGIONAL===_user.nome);
+    return list; // executivo vê tudo
+  }
+
   async function handleUploadPropostas(event){
     const file=event.target.files[0]; if(!file)return;
     const el=document.getElementById('status-propostas');
@@ -856,8 +866,10 @@ const App = (() => {
 
       el.textContent=`✅ ${propostas.length} total (${novas} novas · ${idsParaDeletar.length} removidas)`;
       showToast(`✅ ${novas} novas · ${atualizadas} atualizadas · ${idsParaDeletar.length} removidas`,'success');
-      _refreshSelects(); renderTable();
       await saveToSupabase(true);
+      // Depois de salvar tudo no banco, volta a mostrar só o que esse usuário pode ver
+      propostas=_scopePropostas(propostas);
+      _refreshSelects(); renderTable();
     }catch(err){el.textContent='❌ Erro: '+err.message;showToast('Erro: '+err.message,'error');console.error(err);}
   }
 
