@@ -646,6 +646,49 @@ const App = (() => {
     _carregarDoSupabase();
     _carregarListaSnapshots();
     _carregarUltimaAtualizacao();
+    _limpezaAutomatica(); // roda em segundo plano, no máximo 1x por dia
+  }
+
+  // Mantém o banco enxuto automaticamente:
+  // 1) remove propostas com mais de 15 dias (data_inclusao)
+  // 2) remove propostas sem vínculo (sem DN, loja ou GCM identificados)
+  // Roda no máximo 1x por dia (controlado por um registro em "config"), então
+  // não pesa a cada login/upload — só de fato limpa quando já faz tempo da última vez.
+  async function _limpezaAutomatica(){
+    const LIMITE_DIAS=15;
+    try{
+      const hoje=new Date().toISOString().slice(0,10);
+      const cfg=await SB.get('config?chave=eq.ultima_limpeza_auto&select=valor');
+      if(Array.isArray(cfg)&&cfg.length>0&&cfg[0].valor===hoje) return; // já rodou hoje
+
+      const cutoff=new Date(); cutoff.setDate(cutoff.getDate()-LIMITE_DIAS); cutoff.setHours(0,0,0,0);
+
+      // Busca só as colunas necessárias pra decidir o que apagar (leve, não traz tudo)
+      const todas=await SB.get('propostas?select=id,dn,gcm,loja,data_inclusao');
+      if(!Array.isArray(todas)) return;
+
+      const idsParaApagar=[];
+      todas.forEach(r=>{
+        const semVinculo=!r.dn||!r.gcm||!r.loja;
+        const dataVal=r.data_inclusao?new Date(r.data_inclusao):null;
+        const foraDoPeriodo=dataVal&&!isNaN(dataVal)&&dataVal<cutoff;
+        if(semVinculo||foraDoPeriodo) idsParaApagar.push(r.id);
+      });
+
+      if(idsParaApagar.length>0){
+        for(let i=0;i<idsParaApagar.length;i+=50){
+          const lote=idsParaApagar.slice(i,i+50);
+          await fetch(`${SB_URL}/rest/v1/propostas?or=(${lote.map(id=>`id.eq.${id}`).join(',')})`,{
+            method:'DELETE',
+            headers:{'apikey':SB_KEY,'Authorization':`Bearer ${SB_KEY}`,'Prefer':'return=minimal'}
+          });
+        }
+        console.log(`Limpeza automática: ${idsParaApagar.length} proposta(s) removida(s) (fora do período de ${LIMITE_DIAS} dias ou sem vínculo).`);
+      }
+
+      // Marca que a limpeza já rodou hoje, pra não repetir várias vezes no mesmo dia
+      await SB.post('config?on_conflict=chave',[{chave:'ultima_limpeza_auto',valor:hoje}],'resolution=merge-duplicates,return=minimal');
+    }catch(e){console.warn('Erro na limpeza automática:',e);}
   }
 
   async function _carregarUltimaAtualizacao(){
