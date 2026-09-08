@@ -854,14 +854,25 @@ const App = (() => {
         }
       }catch(e){console.warn('Merge warn:',e);}
 
-      // 2. Monta mapa do CSV — preserva obs/pgto das que já existiam
+      // 1b. Também considera o que já está na tela AGORA (memória local), não só o banco.
+      // Isso cobre o caso de uma marcação (observação/pagamento) feita há poucos segundos,
+      // cujo salvamento no banco pode ainda não ter sido confirmado quando o upload começou.
+      const localMapa={};
+      propostas.forEach(r=>{
+        const k=r.ID_PROPOSTA||r.PROPOSTA;
+        if(k) localMapa[k]={_obs:r._obs||'',_pgto:r._pgto||false};
+      });
+
+      // 2. Monta mapa do CSV — preserva obs/pgto do que já existir (memória local tem prioridade
+      // sobre o banco, e o banco tem prioridade sobre o valor em branco vindo da planilha nova)
       el.textContent='⏳ Processando planilha...';
       const csvMapa={};
       rows.forEach(r=>{
         const row=_normalizeRow(r);
         const k=row.ID_PROPOSTA||row.PROPOSTA;
         if(k){
-          if(existingFull[k]){row._obs=existingFull[k]._obs;row._pgto=existingFull[k]._pgto;}
+          const prev=localMapa[k]||existingFull[k];
+          if(prev){row._obs=prev._obs;row._pgto=prev._pgto;}
           csvMapa[k]=_enrichRow(row);
         }
       });
@@ -893,9 +904,10 @@ const App = (() => {
       // Salva no banco só o que veio nesse upload (novas/atualizadas) — o que já
       // estava salvo permanece intacto, sem precisar reenviar tudo de novo.
       await saveToSupabase(true,Object.values(csvMapa));
-      // Depois de salvar, volta a mostrar só o que esse usuário pode ver
-      propostas=_scopePropostas(propostas);
-      _refreshSelects(); renderTable();
+      // Recarrega a página inteira pra garantir que tudo aparece do jeito que
+      // realmente está salvo no banco (evita qualquer inconsistência de tela).
+      showToast('🔄 Atualizando a página...','info');
+      setTimeout(()=>location.reload(),900);
     }catch(err){el.textContent='❌ Erro: '+err.message;showToast('Erro: '+err.message,'error');console.error(err);}
   }
 
