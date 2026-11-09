@@ -1,26 +1,22 @@
-const CACHE_NAME = 'propostas-v1';
+const CACHE_NAME = 'propostas-v2';
 const ASSETS = [
-  '/',
-  '/index.html',
-  '/manifest.json',
-  '/favicon.ico',
-  '/favicon-16x16.png',
-  '/favicon-32x32.png',
-  '/apple-touch-icon.png',
-  '/android-chrome-192x192.png',
-  '/android-chrome-512x512.png',
+  './',
+  './index.html',
+  './manifest.json',
+  './favicon.ico',
+  './favicon-16x16.png',
+  './favicon-32x32.png',
+  './apple-touch-icon.png',
+  './android-chrome-192x192.png',
+  './android-chrome-512x512.png',
   'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js'
 ];
 
-// Instala e faz cache dos arquivos estáticos
 self.addEventListener('install', e => {
-  e.waitUntil(
-    caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS))
-  );
+  e.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS)));
   self.skipWaiting();
 });
 
-// Limpa caches antigos ao ativar
 self.addEventListener('activate', e => {
   e.waitUntil(
     caches.keys().then(keys =>
@@ -30,17 +26,27 @@ self.addEventListener('activate', e => {
   self.clients.claim();
 });
 
-// Estratégia: Network first para API Supabase, Cache first para assets
 self.addEventListener('fetch', e => {
   const url = new URL(e.request.url);
 
-  // Requisições ao Supabase sempre vão para a rede
   if (url.hostname.includes('supabase.co')) {
     e.respondWith(fetch(e.request));
     return;
   }
 
-  // Assets: tenta cache primeiro, depois rede
+  if (e.request.mode === 'navigate') {
+    e.respondWith(
+      fetch(e.request).then(response => {
+        if (response && response.status === 200) {
+          const clone = response.clone();
+          caches.open(CACHE_NAME).then(cache => cache.put('./index.html', clone));
+        }
+        return response;
+      }).catch(() => caches.match('./index.html').then(r => r || caches.match('./')))
+    );
+    return;
+  }
+
   e.respondWith(
     caches.match(e.request).then(cached => {
       if (cached) return cached;
