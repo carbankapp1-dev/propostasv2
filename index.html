@@ -158,27 +158,10 @@ td.col-coord{display:none}
 .obs-input{width:100%;border:1px solid var(--gray-200);border-radius:6px;padding:3px 8px;font-size:12px;font-family:'DM Sans',sans-serif;color:var(--gray-700);background:var(--gray-50);transition:all .2s;resize:none;min-width:160px}
 .obs-input:focus{outline:none;border-color:var(--green-main);background:#fff;box-shadow:0 0 0 3px rgba(34,164,93,.1)}
 .obs-input::placeholder{color:#b0bec5}
-.obs-select{width:100%;border:1px solid var(--gray-200);border-radius:6px;padding:3px 8px;font-size:12px;font-family:'DM Sans',sans-serif;color:var(--gray-700);background:var(--gray-50);cursor:pointer;min-width:170px;height:28px;}
-.obs-select:focus{outline:none;border-color:var(--green-main);}
 .obs-wrap{display:flex;flex-direction:column;gap:4px;min-width:170px}
 .obs-nota-input{width:100%;border:1px solid var(--gray-200);border-radius:6px;padding:3px 8px;font-size:11px;font-family:'DM Sans',sans-serif;color:var(--gray-700);background:#fff}
 .obs-nota-input:focus{outline:none;border-color:var(--green-main);box-shadow:0 0 0 3px rgba(34,164,93,.1)}
 .obs-nota-input::placeholder{color:#b0bec5}
-tr.row-obs-lost td{background:#fee2e2!important;color:#7f1d1d!important;}
-tr.row-obs-lost td span{color:#7f1d1d!important;}
-tr.row-obs-lost .obs-select{background:#fee2e2!important;border-color:#fca5a5!important;}
-tr.row-obs-warn td{background:#fef9c3!important;color:#713f12!important;}
-tr.row-obs-warn td span{color:#713f12!important;}
-tr.row-obs-warn .obs-select{background:#fef9c3!important;border-color:#fde047!important;}
-tr.row-obs-rival td{background:#b91c1c!important;color:#fff!important;}
-tr.row-obs-rival td span{color:#fff!important;}
-tr.row-obs-rival .obs-select{background:#b91c1c!important;border-color:#ef4444!important;color:#fff!important;}
-tr.row-obs-rival .badge{background:transparent!important;color:#fff!important;border-color:rgba(255,255,255,.5)!important;}
-/* "Outros" segue o mesmo padrão visual de Recusada */
-tr.row-obs-other{border-left:3px solid #f87171}
-tr.row-obs-other td{background:#fff5f5!important;}
-tr.row-obs-other .obs-select{background:#fff!important;border-color:#fecaca!important;}
-tr.row-obs-other .obs-nota-input{border-color:#fecaca}
 /* Caixa de detalhe da observação: 1 linha recolhida, expande para ler o texto todo */
 .obs-nota-row{display:flex;align-items:flex-start;gap:3px}
 .obs-nota-row .obs-nota-input{flex:1;min-width:0;height:22px;line-height:14px;resize:none;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;display:block}
@@ -468,15 +451,15 @@ tr.row-paid td span:not(.badge){color:#1e3a5f!important;}
           <div class="status-dropdown-divider"></div>
           <label class="status-dropdown-item status-dropdown-checkbox">
             <span>🏢 Só minha filial</span>
-            <input type="checkbox" id="filial-checkbox" onchange="App.toggleFilial(this)">
+            <input type="checkbox" id="filial-checkbox" autocomplete="off" onchange="App.toggleFilial(this)">
           </label>
           <div class="status-dropdown-footer" id="filtro-global-badge" style="display:none;">🌐 filtro global ativo — esse status vale pra todo mundo</div>
         </div>
       </div>
       <span class="filter-label">GCM:</span>
-      <select class="filter-select" id="gcm-select" onchange="App.renderTable()"><option value="">Todos</option></select>
+      <select class="filter-select" id="gcm-select" autocomplete="off" onchange="App.renderTable()"><option value="">Todos</option></select>
       <span class="filter-label">Coordenador:</span>
-      <select class="filter-select" id="coord-select" onchange="App.renderTable()"><option value="">Todos</option></select>
+      <select class="filter-select" id="coord-select" autocomplete="off" onchange="App.renderTable()"><option value="">Todos</option></select>
     </div>
     <button onclick="App.gerarRelatorioExcel()" class="btn-relatorio">📊 Excel</button>
   </div>
@@ -783,7 +766,7 @@ const App = (() => {
       const cp=localStorage.getItem('propostas_data');
       if(cp){
         try{propostas=JSON.parse(cp);}catch(_){}
-        _refreshSelects(); renderTable();
+        _refreshSelects(); _resetFiltros(); renderTable();
         if(el)el.textContent=`⚠️ Cache local — ${propostas.length} propostas`;
         showToast('Erro ao conectar ao banco. Usando cache local.','error');
       } else {
@@ -1044,12 +1027,10 @@ const App = (() => {
       const meta=_statusMeta(r.STATUS);
       const rc=(r._pgto?'row-paid ':'row-'+meta.cls);
       const badge=r._pgto?`<span class="badge" style="background:#3b82f6;color:#fff;border-color:#3b82f6;">💰 Pago</span>`:`<span class="badge badge-${meta.cls}">${meta.icon} ${meta.label}</span>`;
-      const obsClass=_obsRowClass(r._obs);
-      const finalRc=r._pgto?'row-paid':(obsClass||rc);
-      const OBS_OPTS=['','Perdemos por taxa','Quebra de crédito','Cliente desistiu','Pago no concorrente','Aguard. documento','Negociando','Outros'];
-      const{categoria:obsCategoria,nota:obsNota}=_obsSplit(r._obs);
-      const mostraNota=_OBS_COM_NOTA.includes(obsCategoria);
-      const obsSelect=`<div class="obs-wrap"><select class="obs-select" data-idx="${idx}" onchange="App.updateObs(this)"><option value="">Selecione...</option>${OBS_OPTS.slice(1).map(o=>`<option value="${_e(o)}"${obsCategoria===o?' selected':''}>${_e(o)}</option>`).join('')}</select><div class="obs-nota-row${_notaExpandida.has(idx)?' expanded':''}" style="${mostraNota?'':'display:none'}"><textarea class="obs-nota-input" data-idx="${idx}" rows="1" placeholder="Detalhe aqui..." title="${_e(obsNota)}" oninput="App.updateObsNota(this)" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur();}">${_e(obsNota)}</textarea><button type="button" class="obs-mini-btn" title="${_notaExpandida.has(idx)?'Recolher':'Expandir texto'}" onclick="App.toggleNota(this)">${_notaExpandida.has(idx)?'▴':'▾'}</button><button type="button" class="obs-mini-btn" title="Copiar texto" onclick="App.copiarNota(this)">📋</button></div></div>`;
+      const finalRc=r._pgto?'row-paid':rc;
+      const obsTxt=_obsTexto(r._obs);
+      const exp=_notaExpandida.has(idx);
+      const obsSelect=`<div class="obs-wrap"><div class="obs-nota-row${exp?' expanded':''}"><textarea class="obs-nota-input" data-idx="${idx}" rows="1" placeholder="Escreva uma observação..." title="${_e(obsTxt)}" oninput="App.updateObsNota(this)" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur();}">${_e(obsTxt)}</textarea><button type="button" class="obs-mini-btn" title="${exp?'Recolher':'Expandir texto'}" onclick="App.toggleNota(this)">${exp?'▴':'▾'}</button><button type="button" class="obs-mini-btn" title="Copiar texto" onclick="App.copiarNota(this)">📋</button></div></div>`;
       return`<tr class="${finalRc}" id="tr-${idx}"><td class="col-name">${_e(r.VENDEDOR)||'—'}</td><td class="col-proposta">${_e(r.PROPOSTA)||'—'}</td><td class="col-data">${_fmt(r.DATA_INCLUSAO)}</td><td>${badge}</td><td class="col-dn">${_e(r.DN)||'—'}</td><td class="col-loja" title="${_e(r.LOJA)||''}">${_e(r.LOJA)||(r.DN?`<span style="color:#b0bec5;font-size:11px">DN ${r.DN}</span>`:'—')}</td><td class="col-gcm" title="${_e(r.GCM)||''}">${_e(r.GCM)||'—'}</td><td class="col-coord" title="${_e(r.COORDENADOR)||''}">${_e(r.COORDENADOR)||'—'}</td><td style="min-width:170px">${obsSelect}</td><td><button class="btn-pgto${r._pgto?' paid':''}" data-idx="${idx}" onclick="App.togglePgto(this)">${r._pgto?'💰':'💵'}</button></td></tr>`;
     }).join('');
     _ajustarAlturasNotas();
@@ -1081,8 +1062,6 @@ const App = (() => {
     document.querySelectorAll('.status-dropdown-item[data-value]').forEach(el=>{
       el.classList.toggle('active',el.dataset.value===f);
     });
-    const badge=document.getElementById('filtro-global-badge');
-    if(badge) badge.style.display=f==='all'?'none':'block';
   }
 
   // Monta, dentro do dropdown de Status, a lista de status "extras" que vieram da planilha
@@ -1124,7 +1103,6 @@ const App = (() => {
     _syncStatusMenu(f);
     document.getElementById('status-dropdown')?.classList.remove('open');
     renderTable();
-    _salvarFiltroGlobal(f);
   }
 
   async function _salvarFiltroGlobal(f){
@@ -1137,15 +1115,16 @@ const App = (() => {
     }catch(e){console.warn('Erro ao salvar filtro:',e);}
   }
 
-  async function _carregarFiltroGlobal(){
-    try{
-      const res=await SB.get('config?chave=eq.filtro_status&select=valor');
-      if(res&&res[0]&&res[0].valor){
-        const f=res[0].valor;
-        currentFilter=f;
-        _syncStatusMenu(f);
-      }
-    }catch(e){console.warn('Erro ao carregar filtro:',e);}
+  // Ao carregar a página (F5, botão atualizar ou novo upload) os filtros voltam
+  // para "Todas / Todos", mostrando todas as propostas.
+  async function _carregarFiltroGlobal(){ _resetFiltros(); }
+  function _resetFiltros(){
+    currentFilter='all';
+    _syncStatusMenu('all');
+    somenteFilial=false;
+    const fc=document.getElementById('filial-checkbox'); if(fc)fc.checked=false;
+    const gs=document.getElementById('gcm-select'); if(gs)gs.value='';
+    const cs=document.getElementById('coord-select'); if(cs)cs.value='';
   }
   function sortBy(f){sortDir=sortField===f?-sortDir:1;sortField=f;renderTable();}
   function toggleFilial(cb){somenteFilial=cb.checked;renderTable();}
@@ -1585,66 +1564,18 @@ const App = (() => {
     gs.value=gv;cs.value=cv;
   }
 
-  const _OBS_LOST=['Perdemos por taxa','Quebra de crédito','Cliente desistiu'];
-  const _OBS_RIVAL=['Pago no concorrente'];
-  const _OBS_WARN=['Aguard. documento','Negociando'];
-  const _OBS_COM_NOTA=['Negociando','Outros','Quebra de crédito','Pago no concorrente']; // essas categorias abrem uma caixinha de texto pra detalhar
-  // Uma observação pode ser só a categoria ("Negociando") ou categoria + nota livre ("Negociando: fecha semana que vem")
-  function _obsSplit(raw){
-    if(!raw) return{categoria:'',nota:''};
-    for(const opt of _OBS_COM_NOTA){
-      if(raw===opt) return{categoria:opt,nota:''};
-      if(raw.startsWith(opt+': ')) return{categoria:opt,nota:raw.slice(opt.length+2)};
-    }
-    return{categoria:raw,nota:''};
-  }
-  function _obsJoin(categoria,nota){
-    if(_OBS_COM_NOTA.includes(categoria)&&nota&&nota.trim()) return`${categoria}: ${nota.trim()}`;
-    return categoria;
-  }
-  function _obsRowClass(obs){
-    const{categoria}=_obsSplit(obs);
-    if(!categoria)return'';
-    if(_OBS_RIVAL.includes(categoria))return'row-obs-rival';
-    if(_OBS_LOST.includes(categoria))return'row-obs-lost';
-    if(_OBS_WARN.includes(categoria))return'row-obs-warn';
-    if(categoria==='Outros')return'row-obs-other';
-    return'';
+  // Observação agora é texto livre. Registros antigos podem vir como "Categoria: texto"
+  // (da lista de opções que existia antes) — nesse caso mostramos só o texto.
+  const _OBS_LEGADO=['Perdemos por taxa','Quebra de crédito','Cliente desistiu','Pago no concorrente','Aguard. documento','Negociando','Outros'];
+  function _obsTexto(raw){
+    if(!raw) return'';
+    for(const c of _OBS_LEGADO){ if(raw.startsWith(c+': ')) return raw.slice(c.length+2); }
+    return raw;
   }
 
-  function updateObs(el){
-    const idx=parseInt(el.dataset.idx);if(isNaN(idx)||!propostas[idx])return;
-    const categoria=el.value;
-    const wrap=el.closest('.obs-wrap');
-    const notaInput=wrap?wrap.querySelector('.obs-nota-input'):null;
-    const notaRow=wrap?wrap.querySelector('.obs-nota-row'):null;
-    const mostraNota=_OBS_COM_NOTA.includes(categoria);
-    if(notaInput){
-      if(notaRow)notaRow.style.display=mostraNota?'flex':'none';
-      if(mostraNota){notaInput.focus();} else {notaInput.value='';}
-    }
-    const nota=(mostraNota&&notaInput)?notaInput.value:'';
-    propostas[idx]._obs=_obsJoin(categoria,nota);
-    // Atualiza classe da linha conforme seleção
-    const tr=document.getElementById('tr-'+idx);
-    if(tr){
-      const r=propostas[idx];
-      const obsClass=_obsRowClass(r._obs);
-      if(r._pgto){tr.className='row-paid';}
-      else if(obsClass){tr.className=obsClass;}
-      else{tr.className='row-'+_statusMeta(r.STATUS).cls;}
-    }
-    try{localStorage.setItem('propostas_data',JSON.stringify(propostas));}catch(e){}
-    clearTimeout(_debounceTimer);
-    _pendingSave=propostas[idx];
-    _debounceTimer=setTimeout(()=>{_pendingSave=null;_salvarLinha(propostas[idx]);},1500);
-  }
   function updateObsNota(input){
     const idx=parseInt(input.dataset.idx);if(isNaN(idx)||!propostas[idx])return;
-    const wrap=input.closest('.obs-wrap');
-    const select=wrap?wrap.querySelector('.obs-select'):null;
-    const categoria=select?select.value:_obsSplit(propostas[idx]._obs).categoria;
-    propostas[idx]._obs=_obsJoin(categoria,input.value);
+    propostas[idx]._obs=input.value.trim();
     input.title=input.value;
     if(input.closest('.obs-nota-row.expanded'))_autoAltura(input);
     try{localStorage.setItem('propostas_data',JSON.stringify(propostas));}catch(e){}
@@ -1695,9 +1626,8 @@ const App = (() => {
     if(tr){
       const pago=propostas[idx]._pgto;
       const s=propostas[idx].STATUS;
-      const obsC=_obsRowClass(propostas[idx]._obs);
       const meta=_statusMeta(s);
-      tr.className=pago?'row-paid':(obsC||'row-'+meta.cls);
+      tr.className=pago?'row-paid':'row-'+meta.cls;
       const badgeCell=tr.querySelector('td:nth-child(4)');
       if(badgeCell){
         if(pago){
@@ -1884,7 +1814,7 @@ const App = (() => {
     showToast('📥 Modelo de propostas baixado!','success');
   }
 
-  return{init,handleUploadLojas,handleUploadPropostas,renderTable,setFilter,sortBy,toggleFilial,toggleStatusMenu,toggleUploadMenu,recarregarBanco,tirarSnapshot,carregarSnapshot,voltarHoje,abrirLimparSnapshots,fecharLimparSnapshots,executarLimparSnap,abrirDashboard,fecharDashboard,updateObs,updateObsNota,toggleNota,copiarNota,atualizarPagina,togglePgto,saveToSupabase,exportCSV,_switchLimparTab,_previewLimparPropostas,baixarModeloLojas,baixarModeloPropostas,gerarRelatorioExcel};
+  return{init,handleUploadLojas,handleUploadPropostas,renderTable,setFilter,sortBy,toggleFilial,toggleStatusMenu,toggleUploadMenu,recarregarBanco,tirarSnapshot,carregarSnapshot,voltarHoje,abrirLimparSnapshots,fecharLimparSnapshots,executarLimparSnap,abrirDashboard,fecharDashboard,updateObsNota,toggleNota,copiarNota,atualizarPagina,togglePgto,saveToSupabase,exportCSV,_switchLimparTab,_previewLimparPropostas,baixarModeloLojas,baixarModeloPropostas,gerarRelatorioExcel};
 
 })();
 
@@ -1907,8 +1837,9 @@ window.addEventListener('DOMContentLoaded',()=>{
 // ════════════════════════════════════════════════
 if('serviceWorker' in navigator){
   window.addEventListener('load',()=>{
-    navigator.serviceWorker.register('sw.js')
-      .then(r=>console.log('SW registrado:',r.scope))
+    // updateViaCache:'none' faz o navegador sempre checar se existe sw.js novo
+    navigator.serviceWorker.register('sw.js',{updateViaCache:'none'})
+      .then(r=>{console.log('SW registrado:',r.scope);r.update();})
       .catch(e=>console.warn('SW erro:',e));
   });
 }
