@@ -134,8 +134,9 @@ thead{background:var(--green-dark);position:sticky;top:0;z-index:10}
 thead th{color:#fff;padding:8px 13px;text-align:left;font-weight:600;font-size:12px;letter-spacing:.3px;white-space:nowrap;cursor:pointer;user-select:none;transition:background .15s}
 thead th:hover{background:rgba(255,255,255,.1)}
 .sort-icon{opacity:.4;margin-left:3px;font-size:10px}
-tbody tr{border-bottom:1px solid var(--gray-100);transition:filter .1s}
-tbody tr:last-child{border-bottom:none}
+tbody tr{transition:filter .1s}
+tbody td{border-bottom:1px solid #d1d5db}
+tbody tr:last-child td{border-bottom:none}
 tbody tr:hover{filter:brightness(.97)}
 tbody tr.row-approved{background:#f0fdf4;border-left:3px solid #4ade80}
 tbody tr.row-rejected{background:#fff5f5;border-left:3px solid #f87171}
@@ -173,8 +174,25 @@ tr.row-obs-rival td{background:#b91c1c!important;color:#fff!important;}
 tr.row-obs-rival td span{color:#fff!important;}
 tr.row-obs-rival .obs-select{background:#b91c1c!important;border-color:#ef4444!important;color:#fff!important;}
 tr.row-obs-rival .badge{background:transparent!important;color:#fff!important;border-color:rgba(255,255,255,.5)!important;}
-tr.row-obs-other td{background:var(--gray-100)!important;color:var(--gray-700)!important;}
-tr.row-obs-other .obs-select{background:var(--gray-100)!important;border-color:var(--gray-300)!important;}
+tr.row-obs-other{border-left:3px solid #fb923c}
+tr.row-obs-other td{background:#ffedd5!important;color:#7c2d12!important;}
+tr.row-obs-other td span{color:#7c2d12!important;}
+tr.row-obs-other .obs-select{background:#fff7ed!important;border-color:#fdba74!important;color:#7c2d12!important;}
+tr.row-obs-other .obs-nota-input{border-color:#fdba74}
+/* Caixa de detalhe da observação: 1 linha recolhida, expande para ler o texto todo */
+.obs-nota-row{display:flex;align-items:flex-start;gap:3px}
+.obs-nota-row .obs-nota-input{flex:1;min-width:0;height:22px;line-height:14px;resize:none;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;display:block}
+.obs-nota-row.expanded .obs-nota-input{white-space:pre-wrap;overflow:auto;min-height:44px;max-height:180px;font-size:12px;line-height:16px;padding:5px 8px}
+.obs-nota-row.expanded{min-width:260px}
+.obs-mini-btn{flex-shrink:0;width:22px;height:22px;border:1px solid var(--gray-200);border-radius:6px;background:#fff;cursor:pointer;font-size:11px;line-height:1;display:flex;align-items:center;justify-content:center;padding:0;color:var(--gray-700);transition:all .15s}
+.obs-mini-btn:hover{border-color:var(--green-main);background:var(--green-light)}
+.obs-mini-btn.copied{border-color:#16a34a;background:#dcfce7;color:#166534}
+/* Botão atualizar no cabeçalho */
+.btn-refresh{background:var(--gray-200);color:#1f2937;border:none;border-radius:7px;width:30px;height:28px;font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .15s}
+.btn-refresh:hover{background:var(--gray-300)}
+.btn-refresh:disabled{cursor:wait;opacity:.7}
+.btn-refresh.spinning span{display:inline-block;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
 .btn-pgto{background:none;border:2px solid var(--gray-200);border-radius:8px;padding:2px 6px;cursor:pointer;font-size:13px;transition:all .2s;display:flex;align-items:center;justify-content:center;width:30px;height:24px}
 .btn-pgto:hover{border-color:var(--green-main);background:var(--green-light)}
 .btn-pgto.paid{border-color:#3b82f6;background:#3b82f6;color:#fff;}
@@ -266,6 +284,7 @@ tr.row-paid td span:not(.badge){color:#1e3a5f!important;}
         <div class="upload-chip-menu-status" id="ultima-atualizacao"></div>
       </div>
     </div>
+    <button type="button" class="btn-refresh" id="btn-refresh" onclick="App.atualizarPagina()" title="Atualizar propostas" aria-label="Atualizar propostas"><span>⟳</span></button>
   </div>
   <div class="header-right">
     <div class="user-pill">
@@ -638,7 +657,8 @@ const Auth = (() => {
 const App = (() => {
   let lojas={}, propostas=[], currentFilter='all', sortField='DATA_INCLUSAO', sortDir=-1, somenteFilial=false;
   let _user=null;
-  let _debounceTimer=null;
+  let _debounceTimer=null, _pendingSave=null;
+  const _notaExpandida=new Set(); // índices das linhas com o texto da observação expandido
 
   function init(user) {
     _user=user;
@@ -1029,12 +1049,17 @@ const App = (() => {
       const OBS_OPTS=['','Perdemos por taxa','Quebra de crédito','Cliente desistiu','Pago no concorrente','Aguard. documento','Negociando','Outros'];
       const{categoria:obsCategoria,nota:obsNota}=_obsSplit(r._obs);
       const mostraNota=_OBS_COM_NOTA.includes(obsCategoria);
-      const obsSelect=`<div class="obs-wrap"><select class="obs-select" data-idx="${idx}" onchange="App.updateObs(this)"><option value="">Selecione...</option>${OBS_OPTS.slice(1).map(o=>`<option value="${_e(o)}"${obsCategoria===o?' selected':''}>${_e(o)}</option>`).join('')}</select><input type="text" class="obs-nota-input" data-idx="${idx}" placeholder="Detalhe aqui..." value="${_e(obsNota)}" oninput="App.updateObsNota(this)" style="${mostraNota?'':'display:none'}"></div>`;
+      const obsSelect=`<div class="obs-wrap"><select class="obs-select" data-idx="${idx}" onchange="App.updateObs(this)"><option value="">Selecione...</option>${OBS_OPTS.slice(1).map(o=>`<option value="${_e(o)}"${obsCategoria===o?' selected':''}>${_e(o)}</option>`).join('')}</select><div class="obs-nota-row${_notaExpandida.has(idx)?' expanded':''}" style="${mostraNota?'':'display:none'}"><textarea class="obs-nota-input" data-idx="${idx}" rows="1" placeholder="Detalhe aqui..." title="${_e(obsNota)}" oninput="App.updateObsNota(this)" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur();}">${_e(obsNota)}</textarea><button type="button" class="obs-mini-btn" title="${_notaExpandida.has(idx)?'Recolher':'Expandir texto'}" onclick="App.toggleNota(this)">${_notaExpandida.has(idx)?'▴':'▾'}</button><button type="button" class="obs-mini-btn" title="Copiar texto" onclick="App.copiarNota(this)">📋</button></div></div>`;
       return`<tr class="${finalRc}" id="tr-${idx}"><td class="col-name">${_e(r.VENDEDOR)||'—'}</td><td class="col-proposta">${_e(r.PROPOSTA)||'—'}</td><td class="col-data">${_fmt(r.DATA_INCLUSAO)}</td><td>${badge}</td><td class="col-dn">${_e(r.DN)||'—'}</td><td class="col-loja" title="${_e(r.LOJA)||''}">${_e(r.LOJA)||(r.DN?`<span style="color:#b0bec5;font-size:11px">DN ${r.DN}</span>`:'—')}</td><td class="col-gcm" title="${_e(r.GCM)||''}">${_e(r.GCM)||'—'}</td><td class="col-coord" title="${_e(r.COORDENADOR)||''}">${_e(r.COORDENADOR)||'—'}</td><td style="min-width:170px">${obsSelect}</td><td><button class="btn-pgto${r._pgto?' paid':''}" data-idx="${idx}" onclick="App.togglePgto(this)">${r._pgto?'💰':'💵'}</button></td></tr>`;
     }).join('');
+    _ajustarAlturasNotas();
   }
 
   function _fmt(d){if(!d)return'';const dt=new Date(d);if(isNaN(dt))return String(d).replace('T',' ').substring(0,16);return dt.toLocaleDateString('pt-BR')+' '+dt.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});}
+  function _ajustarAlturasNotas(){
+    document.querySelectorAll('.obs-nota-row.expanded .obs-nota-input').forEach(_autoAltura);
+  }
+  function _autoAltura(t){t.style.height='auto';t.style.height=Math.min(t.scrollHeight+2,180)+'px';}
   function _e(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 
   const STATUS_LABELS={all:'Todas',Aprovada:'✅ Aprovadas',Recusada:'❌ Recusadas',Incluida:'🕐 Incluídas'};
@@ -1592,9 +1617,10 @@ const App = (() => {
     const categoria=el.value;
     const wrap=el.closest('.obs-wrap');
     const notaInput=wrap?wrap.querySelector('.obs-nota-input'):null;
+    const notaRow=wrap?wrap.querySelector('.obs-nota-row'):null;
     const mostraNota=_OBS_COM_NOTA.includes(categoria);
     if(notaInput){
-      notaInput.style.display=mostraNota?'block':'none';
+      if(notaRow)notaRow.style.display=mostraNota?'flex':'none';
       if(mostraNota){notaInput.focus();} else {notaInput.value='';}
     }
     const nota=(mostraNota&&notaInput)?notaInput.value:'';
@@ -1610,7 +1636,8 @@ const App = (() => {
     }
     try{localStorage.setItem('propostas_data',JSON.stringify(propostas));}catch(e){}
     clearTimeout(_debounceTimer);
-    _debounceTimer=setTimeout(()=>_salvarLinha(propostas[idx]),1500);
+    _pendingSave=propostas[idx];
+    _debounceTimer=setTimeout(()=>{_pendingSave=null;_salvarLinha(propostas[idx]);},1500);
   }
   function updateObsNota(input){
     const idx=parseInt(input.dataset.idx);if(isNaN(idx)||!propostas[idx])return;
@@ -1618,9 +1645,46 @@ const App = (() => {
     const select=wrap?wrap.querySelector('.obs-select'):null;
     const categoria=select?select.value:_obsSplit(propostas[idx]._obs).categoria;
     propostas[idx]._obs=_obsJoin(categoria,input.value);
+    input.title=input.value;
+    if(input.closest('.obs-nota-row.expanded'))_autoAltura(input);
     try{localStorage.setItem('propostas_data',JSON.stringify(propostas));}catch(e){}
     clearTimeout(_debounceTimer);
-    _debounceTimer=setTimeout(()=>_salvarLinha(propostas[idx]),1500);
+    _pendingSave=propostas[idx];
+    _debounceTimer=setTimeout(()=>{_pendingSave=null;_salvarLinha(propostas[idx]);},1500);
+  }
+  function toggleNota(btn){
+    const row=btn.closest('.obs-nota-row');if(!row)return;
+    const t=row.querySelector('.obs-nota-input');
+    const idx=parseInt(t.dataset.idx);
+    const abrir=!row.classList.contains('expanded');
+    row.classList.toggle('expanded',abrir);
+    if(abrir){_notaExpandida.add(idx);_autoAltura(t);}else{_notaExpandida.delete(idx);t.style.height='';t.scrollTop=0;}
+    btn.textContent=abrir?'▴':'▾';btn.title=abrir?'Recolher':'Expandir texto';
+  }
+  async function copiarNota(btn){
+    const t=btn.closest('.obs-nota-row')?.querySelector('.obs-nota-input');
+    const txt=(t?.value||'').trim();
+    if(!txt){showToast('Nada para copiar','info');return;}
+    let ok=false;
+    try{await navigator.clipboard.writeText(txt);ok=true;}catch(_){
+      try{const tmp=document.createElement('textarea');tmp.value=txt;tmp.style.position='fixed';tmp.style.opacity='0';document.body.appendChild(tmp);tmp.select();ok=document.execCommand('copy');tmp.remove();}catch(__){}
+    }
+    if(ok){btn.classList.add('copied');btn.textContent='✓';setTimeout(()=>{btn.classList.remove('copied');btn.textContent='📋';},1200);showToast('Texto copiado','success');}
+    else showToast('Não foi possível copiar','error');
+  }
+  async function atualizarPagina(){
+    const btn=document.getElementById('btn-refresh');
+    if(btn&&btn.disabled)return;
+    if(btn){btn.disabled=true;btn.classList.add('spinning');}
+    try{
+      // Salva antes alguma observação que ainda estava aguardando o envio
+      if(_pendingSave){clearTimeout(_debounceTimer);const r=_pendingSave;_pendingSave=null;await _salvarLinha(r);}
+      _notaExpandida.clear();
+      await _carregarUltimaAtualizacao();
+      await _carregarDoSupabase();
+    }finally{
+      if(btn){btn.disabled=false;btn.classList.remove('spinning');}
+    }
   }
   function togglePgto(btn){
     const idx=parseInt(btn.dataset.idx);if(isNaN(idx)||!propostas[idx])return;
@@ -1820,7 +1884,7 @@ const App = (() => {
     showToast('📥 Modelo de propostas baixado!','success');
   }
 
-  return{init,handleUploadLojas,handleUploadPropostas,renderTable,setFilter,sortBy,toggleFilial,toggleStatusMenu,toggleUploadMenu,recarregarBanco,tirarSnapshot,carregarSnapshot,voltarHoje,abrirLimparSnapshots,fecharLimparSnapshots,executarLimparSnap,abrirDashboard,fecharDashboard,updateObs,updateObsNota,togglePgto,saveToSupabase,exportCSV,_switchLimparTab,_previewLimparPropostas,baixarModeloLojas,baixarModeloPropostas,gerarRelatorioExcel};
+  return{init,handleUploadLojas,handleUploadPropostas,renderTable,setFilter,sortBy,toggleFilial,toggleStatusMenu,toggleUploadMenu,recarregarBanco,tirarSnapshot,carregarSnapshot,voltarHoje,abrirLimparSnapshots,fecharLimparSnapshots,executarLimparSnap,abrirDashboard,fecharDashboard,updateObs,updateObsNota,toggleNota,copiarNota,atualizarPagina,togglePgto,saveToSupabase,exportCSV,_switchLimparTab,_previewLimparPropostas,baixarModeloLojas,baixarModeloPropostas,gerarRelatorioExcel};
 
 })();
 
