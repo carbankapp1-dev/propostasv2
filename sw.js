@@ -1,4 +1,4 @@
-const CACHE_NAME = 'propostas-v3';
+const CACHE_NAME = 'propostas-v4';
 const ASSETS = [
   './',
   './index.html',
@@ -36,7 +36,8 @@ self.addEventListener('fetch', e => {
 
   if (e.request.mode === 'navigate') {
     e.respondWith(
-      fetch(e.request).then(response => {
+      // Sempre busca a versão mais nova da página no servidor (sem usar o cache do navegador)
+      fetch(e.request.url, { cache: 'no-store', credentials: 'same-origin' }).then(response => {
         if (response && response.status === 200) {
           const clone = response.clone();
           caches.open(CACHE_NAME).then(cache => cache.put('./index.html', clone));
