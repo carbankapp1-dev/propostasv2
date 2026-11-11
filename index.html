@@ -526,6 +526,20 @@ const SB = {
     },
     body:JSON.stringify(body)
   }),
+  // O Supabase devolve no MÁXIMO 1000 linhas por consulta (mesmo pedindo mais).
+  // getAll busca de 1000 em 1000 até acabar (com um teto de segurança).
+  getAll: async (path, maxPaginas=50) => {
+    const base=path.replace(/&limit=\d+/,'');
+    const ordem=/[?&]order=/.test(base)?'':'&order=id.asc';
+    let todas=[];
+    for(let pg=0;pg<maxPaginas;pg++){
+      const parte=await SB.get(`${base}${ordem}&offset=${pg*1000}&limit=1000`);
+      if(!Array.isArray(parte)) return pg===0?parte:todas;
+      todas=todas.concat(parte);
+      if(parte.length<1000) break;
+    }
+    return todas;
+  },
   patch: (path, body) => fetch(`${SB_URL}/rest/v1/${path}`, {
     method:'PATCH',
     headers:{
@@ -668,35 +682,40 @@ const App = (() => {
     try{
       const hoje=new Date().toISOString().slice(0,10);
       const cfg=await SB.get('config?chave=eq.ultima_limpeza_auto&select=valor');
-      if(Array.isArray(cfg)&&cfg.length>0&&cfg[0].valor===hoje) return; // já rodou hoje
+      if(Array.isArray(cfg)&&cfg.length>0&&cfg[0].valor===hoje) return; // já terminou hoje
 
       const cutoff=new Date(); cutoff.setDate(cutoff.getDate()-LIMITE_DIAS); cutoff.setHours(0,0,0,0);
-
-      // Busca só as colunas necessárias pra decidir o que apagar (leve, não traz tudo)
-      const todas=await SB.get('propostas?select=id,dn,gcm,loja,data_inclusao');
-      if(!Array.isArray(todas)) return;
-
-      const idsParaApagar=[];
-      todas.forEach(r=>{
-        const semVinculo=!r.dn||!r.gcm||!r.loja;
-        const dataVal=r.data_inclusao?new Date(r.data_inclusao):null;
-        const foraDoPeriodo=dataVal&&!isNaN(dataVal)&&dataVal<cutoff;
-        if(semVinculo||foraDoPeriodo) idsParaApagar.push(r.id);
-      });
-
-      if(idsParaApagar.length>0){
-        for(let i=0;i<idsParaApagar.length;i+=50){
-          const lote=idsParaApagar.slice(i,i+50);
-          await fetch(`${SB_URL}/rest/v1/propostas?or=(${lote.map(id=>`id.eq.${id}`).join(',')})`,{
-            method:'DELETE',
-            headers:{'apikey':SB_KEY,'Authorization':`Bearer ${SB_KEY}`,'Prefer':'return=minimal'}
-          });
+      const corte=cutoff.toISOString().slice(0,10);
+      // Regras (as mesmas de antes): mais de 15 dias, OU sem vínculo (sem DN, GCM ou loja cadastrada)
+      const filtros=[
+        `data_inclusao=lt.${corte}`,
+        'or=(dn.is.null,gcm.is.null,loja.is.null,dn.eq.,gcm.eq.,loja.eq.)',
+      ];
+      // Busca os ids de 1000 em 1000 e apaga em lotes de 200; no máximo 30 mil por vez
+      // (o resto continua na próxima vez que alguém entrar)
+      let total=0, terminou=true;
+      for(const f of filtros){
+        let acabou=false;
+        for(let volta=0;volta<15&&!acabou;volta++){
+          const ids=await SB.get(`propostas?select=id&${f}&limit=1000`);
+          if(!Array.isArray(ids)||!ids.length){acabou=true;break;}
+          for(let i=0;i<ids.length;i+=200){
+            const lote=ids.slice(i,i+200).map(r=>r.id).join(',');
+            const res=await fetch(`${SB_URL}/rest/v1/propostas?id=in.(${lote})`,{
+              method:'DELETE',
+              headers:{'apikey':SB_KEY,'Authorization':`Bearer ${SB_KEY}`,'Prefer':'return=minimal'}
+            });
+            if(!res.ok&&res.status!==204) throw new Error('DELETE '+res.status);
+          }
+          total+=ids.length;
+          if(ids.length<1000) acabou=true;
         }
-        console.log(`Limpeza automática: ${idsParaApagar.length} proposta(s) removida(s) (fora do período de ${LIMITE_DIAS} dias ou sem vínculo).`);
+        if(!acabou) terminou=false;
       }
+      if(total) console.log(`Limpeza automática: ${total} proposta(s) removida(s) (mais de ${LIMITE_DIAS} dias ou sem vínculo).`);
 
-      // Marca que a limpeza já rodou hoje, pra não repetir várias vezes no mesmo dia
-      await SB.post('config?on_conflict=chave',[{chave:'ultima_limpeza_auto',valor:hoje}],'resolution=merge-duplicates,return=minimal');
+      // Só marca como feita quando não sobrou nada para apagar
+      if(terminou) await SB.post('config?on_conflict=chave',[{chave:'ultima_limpeza_auto',valor:hoje}],'resolution=merge-duplicates,return=minimal');
     }catch(e){console.warn('Erro na limpeza automática:',e);}
   }
 
@@ -733,7 +752,7 @@ const App = (() => {
       }
       // executivo: query sem filtro — vê tudo
 
-      const data=await SB.get(query);
+      const data=await SB.getAll(query.replace('order=data_inclusao.desc','order=data_inclusao.desc,id.desc'));
       if(!Array.isArray(data)) throw new Error(data.message||data.hint||JSON.stringify(data));
       if(data.length>0){
         propostas=data.map(r=>({
@@ -848,7 +867,16 @@ const App = (() => {
       el.textContent='⏳ Consultando banco...';
       const existingFull={};
       try{
-        const dbRows=await SB.get('propostas?select=id_proposta,proposta,vendedor,data_inclusao,dn,loja,gcm,coordenador,regional,executivo,status,observacao,pgto');
+        // Busca no banco só as propostas que estão nesta planilha, em lotes de 150 números
+        // (ler a tabela inteira não funciona: o Supabase devolve no máximo 1000 linhas)
+        const idsCsv=[...new Set(rows.map(r=>_normalizeRow(r).ID_PROPOSTA).filter(Boolean))];
+        const dbRows=[];
+        for(let i=0;i<idsCsv.length;i+=150){
+          const lote=idsCsv.slice(i,i+150).map(encodeURIComponent).join(',');
+          const parte=await SB.get(`propostas?select=id_proposta,proposta,vendedor,data_inclusao,dn,loja,gcm,coordenador,regional,executivo,status,observacao,pgto&id_proposta=in.(${lote})`);
+          if(!Array.isArray(parte)) throw new Error('falha ao consultar o banco: '+JSON.stringify(parte).slice(0,200));
+          dbRows.push(...parte);
+        }
         if(Array.isArray(dbRows)){
           dbRows.forEach(p=>{
             const k=p.id_proposta||p.proposta;
@@ -861,7 +889,10 @@ const App = (() => {
             };
           });
         }
-      }catch(e){console.warn('Merge warn:',e);}
+      }catch(e){
+        console.error('Merge:',e);
+        throw new Error('não consegui ler as observações já salvas — upload cancelado para não apagar nada. Tente de novo.');
+      }
 
       // 1b. Também considera o que já está na tela AGORA (memória local), não só o banco.
       // Isso cobre o caso de uma marcação (observação/pagamento) feita há poucos segundos,
@@ -880,8 +911,9 @@ const App = (() => {
         const row=_normalizeRow(r);
         const k=row.ID_PROPOSTA||row.PROPOSTA;
         if(k){
-          const prev=localMapa[k]||existingFull[k];
-          if(prev){row._obs=prev._obs;row._pgto=prev._pgto;}
+          const loc=localMapa[k], db=existingFull[k];
+          row._obs=(loc&&loc._obs)||(db&&db._obs)||'';
+          row._pgto=!!((loc&&loc._pgto)||(db&&db._pgto));
           csvMapa[k]=_enrichRow(row);
         }
       });
